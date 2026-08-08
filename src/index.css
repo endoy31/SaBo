@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .glass-panel {
+    background-color: rgba(13, 46, 34, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(247, 244, 235, 0.15);
+  }
+
+  .glass-card {
+    background-color: rgba(247, 244, 235, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(247, 244, 235, 0.12);
+  }
+
+  .glass-input {
+    background-color: rgba(9, 31, 22, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(247, 244, 235, 0.18);
+  }
+
+  .glass-pill {
+    background-color: rgba(247, 244, 235, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(247, 244, 235, 0.18);
+  }
+}
+
+/* Light Mode Theme Overrides (Krem, Hijau Tua, Coklat Accent) */
+.light,
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+.light .glass-panel,
+[data-theme="light"] .glass-panel {
+  background-color: rgba(255, 252, 245, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  color: #0a2e20;
+}
+
+.light .glass-card,
+[data-theme="light"] .glass-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(180, 83, 9, 0.18);
+  color: #0a2e20;
+}
+
+.light .glass-input,
+[data-theme="light"] .glass-input {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(15, 83, 56, 0.3);
+  color: #0a2e20;
+}
+
+.light .glass-pill,
+[data-theme="light"] .glass-pill {
+  background-color: rgba(180, 83, 9, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  color: #0a2e20;
+}
+
+/* Scrollbars for light mode */
+.light ::-webkit-scrollbar-track,
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: rgba(240, 233, 218, 0.9);
+}
+
+.light ::-webkit-scrollbar-thumb,
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(180, 83, 9, 0.4);
+  border-radius: 9999px;
+}
+
+/* Custom scrollbars for dark mode */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(9, 31, 22, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(180, 83, 9, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.6);
+}

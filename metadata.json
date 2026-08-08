@@ -1,0 +1,6 @@
+{
+  "name": "SaBo - Saba Bogor",
+  "description": "Gamifikasi Edukasi Warisan Budaya, Peta Interaktif, Eksplorasi Kuliner & Hub Kreator Lokal Kota Bogor",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
