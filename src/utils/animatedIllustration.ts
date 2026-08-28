@@ -398,8 +398,93 @@ export function generateAnimatedSvg(
       <circle cx="400" cy="220" r="170" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="8 8" class="anim-spin" />
     `;
   }
-  // 15. RESTORAN HYPE & KAFE (MEDJA, BUMI AKI, DE LEUIT, KEDAI KITA)
-  else if (lower.includes('restoran') || lower.includes('resto') || lower.includes('cafe') || lower.includes('kedai') || lower.includes('medja') || lower.includes('de’leuit') || lower.includes('bumi aki') || lower.includes('macaroni') || lower.includes('glass house') || lower.includes('gurih 7')) {
+  // 15. COFFEE & KOPITIAM (KOPI NAKO, RAINDEAR, KEMENADY, BAH SIPIT, KOBA)
+  else if (lower.includes('kopi') || lower.includes('coffee') || lower.includes('kopitiam')) {
+    bgGradient = ['#291406', '#451a03', '#78350f']; // Deep Roast Amber
+    primaryColor = '#fbbf24';
+    accentColor = '#f59e0b';
+    illustrationSvg = `
+      <!-- Artisan Coffee Cup with Latte Art & Floating Coffee Beans -->
+      <g transform="translate(240, 130)">
+        <!-- Saucer -->
+        <ellipse cx="160" cy="240" rx="140" ry="25" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4" />
+        <!-- Ceramic Cup -->
+        <path d="M 60 120 L 80 220 Q 160 250 240 220 L 260 120 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="4" />
+        <!-- Cup Handle -->
+        <path d="M 250 140 C 290 140 290 200 240 200" stroke="#f8fafc" stroke-width="16" fill="none" stroke-linecap="round" />
+        <!-- Coffee Surface with Heart Latte Art -->
+        <ellipse cx="160" cy="120" rx="100" ry="26" fill="#78350f" />
+        <ellipse cx="160" cy="120" rx="60" ry="16" fill="#fbbf24" opacity="0.9" />
+        <!-- Steam rising -->
+        <path d="M 130 90 Q 120 60 140 30" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.8" class="anim-steam" />
+        <path d="M 170 80 Q 180 50 160 20" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.8" class="anim-steam-delayed" />
+        <!-- Floating Coffee Beans -->
+        <g class="anim-float" transform="translate(40, 40)">
+          <ellipse cx="0" cy="0" rx="12" ry="18" fill="#451a03" stroke="#fbbf24" stroke-width="2" />
+          <path d="M 0 -15 Q 4 0 0 15" stroke="#fbbf24" stroke-width="2" fill="none" />
+        </g>
+        <g class="anim-float" transform="translate(270, 60)">
+          <ellipse cx="0" cy="0" rx="10" ry="15" fill="#451a03" stroke="#fbbf24" stroke-width="2" />
+          <path d="M 0 -12 Q 3 0 0 12" stroke="#fbbf24" stroke-width="2" fill="none" />
+        </g>
+      </g>
+    `;
+  }
+  // 15b. BAKSO & MIE AYAM & BATAGOR (TITOTI, SEUSEUPAN, REOG, BRAGI)
+  else if (lower.includes('bakso') || lower.includes("ba'so") || lower.includes('mie ayam') || lower.includes('batagor') || lower.includes('siomay')) {
+    bgGradient = ['#7c2d12', '#991b1b', '#b91c1c']; // Hot Chili Broth
+    primaryColor = '#fbbf24';
+    accentColor = '#22c55e';
+    illustrationSvg = `
+      <!-- Steaming Bowl of Meatballs, Noodles & Crisp Wonton -->
+      <g transform="translate(240, 130)">
+        <!-- Ceramic Bowl -->
+        <path d="M 30 130 Q 160 280 290 130 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="6" />
+        <!-- Golden Broth Surface -->
+        <ellipse cx="160" cy="130" rx="130" ry="32" fill="#f59e0b" />
+        <!-- Round Meatballs (Bakso) -->
+        <circle cx="110" cy="120" r="28" fill="#78350f" stroke="#92400e" stroke-width="3" />
+        <circle cx="170" cy="110" r="32" fill="#78350f" stroke="#92400e" stroke-width="3" />
+        <circle cx="220" cy="125" r="26" fill="#78350f" stroke="#92400e" stroke-width="3" />
+        <!-- Yellow Noodles & Green Scallions -->
+        <path d="M 70 125 Q 100 145 130 125 Q 160 145 190 125" stroke="#facc15" stroke-width="8" fill="none" stroke-linecap="round" />
+        <circle cx="140" cy="115" r="5" fill="#22c55e" />
+        <circle cx="195" cy="130" r="5" fill="#22c55e" />
+        <circle cx="165" cy="138" r="5" fill="#22c55e" />
+        <!-- Steam -->
+        <path d="M 120 80 Q 110 50 130 20" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" class="anim-steam" />
+        <path d="M 180 70 Q 190 40 170 10" stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none" class="anim-steam-delayed" />
+      </g>
+    `;
+  }
+  // 15c. MARTABAK & BAKERY & KUE (MARTABAK ENCEK, AFO, MICHELLE, VENUS, RAFITA)
+  else if (lower.includes('martabak') || lower.includes('bakery') || lower.includes('cake') || lower.includes('roti') || lower.includes('kue') || lower.includes('brownies') || lower.includes('dodol')) {
+    bgGradient = ['#451a03', '#78350f', '#b45309']; // Warm Pastry Amber
+    primaryColor = '#facc15';
+    accentColor = '#ec4899';
+    illustrationSvg = `
+      <!-- Fresh Bakery Pan, Golden Sweet Martabak & Croissant / Roti -->
+      <g transform="translate(230, 140)">
+        <!-- Golden Baked Base / Cake -->
+        <ellipse cx="170" cy="220" rx="140" ry="40" fill="#d97706" stroke="#fbbf24" stroke-width="4" />
+        <ellipse cx="170" cy="200" rx="140" ry="40" fill="#fbbf24" />
+        <!-- Melted Butter & Chocolate Toppings -->
+        <ellipse cx="170" cy="195" rx="110" ry="30" fill="#78350f" opacity="0.85" />
+        <circle cx="120" cy="190" r="8" fill="#fef08a" />
+        <circle cx="160" cy="195" r="9" fill="#fef08a" />
+        <circle cx="210" cy="190" r="8" fill="#fef08a" />
+        <!-- Fluffy Roti & Pastry Swirl -->
+        <g class="anim-float" transform="translate(170, 90)">
+          <ellipse cx="0" cy="0" rx="40" ry="30" fill="#f59e0b" stroke="#ffffff" stroke-width="3" />
+          <path d="M -25 -5 Q 0 -20 25 -5" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" />
+        </g>
+      </g>
+      <circle cx="200" cy="140" r="6" fill="#fef08a" class="anim-glow" />
+      <circle cx="600" cy="180" r="8" fill="#fef08a" class="anim-glow" />
+    `;
+  }
+  // 15d. RESTORAN HYPE & KAFE (MEDJA, BUMI AKI, DE LEUIT, KEDAI KITA, SEAFOOD)
+  else if (lower.includes('restoran') || lower.includes('resto') || lower.includes('cafe') || lower.includes('kedai') || lower.includes('medja') || lower.includes('de’leuit') || lower.includes('bumi aki') || lower.includes('macaroni') || lower.includes('glass house') || lower.includes('gurih 7') || lower.includes('seafood') || lower.includes('kerang') || lower.includes('ikan')) {
     bgGradient = ['#451a03', '#78350f', '#92400e']; // Warm Bistro Mahogany
     primaryColor = '#fbbf24';
     accentColor = '#f97316';

@@ -23,8 +23,10 @@ import {
   UserCoordinates,
   findNearbyPlaces,
 } from './utils/geolocationManager';
+import { LanguageProvider, useLanguage } from './utils/translations';
 
-export default function App() {
+function AppInner() {
+  const { lang } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>('map');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [selectedQuestLocation, setSelectedQuestLocation] =
@@ -208,7 +210,11 @@ export default function App() {
       username: usernameFromEmail || 'Penjelajah Bogor',
       avatar: generateAnimatedSvg(usernameFromEmail || 'Penjelajah Bogor', 'avatar'),
     });
-    alert(`Selamat datang kembali, ${usernameFromEmail}! Data profil tersinkronisasi.`);
+    alert(
+      lang === 'en'
+        ? `Welcome back, ${usernameFromEmail}! Profile data synchronized.`
+        : `Selamat datang kembali, ${usernameFromEmail}! Data profil tersinkronisasi.`
+    );
   };
 
   // Update Profile
@@ -339,3 +345,12 @@ export default function App() {
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppInner />
+    </LanguageProvider>
+  );
+}
+

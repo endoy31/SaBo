@@ -99,6 +99,29 @@ export interface UMKMCenter {
   image: string;
 }
 
+export interface UMKMItem {
+  id: string;
+  number: number;
+  name: string;
+  category: string;
+  generalCategory: 'kopi' | 'kuliner' | 'bakery' | 'kerajinan' | 'fashion' | 'kreatif';
+  district: string;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  googleMapsUrl: string;
+  instagram?: string;
+  tiktok?: string;
+  whatsapp?: string;
+  phone?: string;
+  notes: string;
+  image: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
 export interface CreatorProduct {
   id: string;
   name: string;

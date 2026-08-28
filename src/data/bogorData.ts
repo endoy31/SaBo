@@ -1441,7 +1441,7 @@ export const YOUTUBE_VIDEOS: YouTubeVideo[] = [
     youtubeId: 'U3Ks7uAcvy8',
     embedUrl: 'https://www.youtube.com/embed/U3Ks7uAcvy8',
     youtubeUrl: 'https://youtu.be/U3Ks7uAcvy8?si=Thq2pvYCC5bmRWPP',
-    thumbnail: generateAnimatedSvg("Bogor Tempo Dulu (Arsip Sejarah)", 'video'),
+    thumbnail: 'https://img.youtube.com/vi/U3Ks7uAcvy8/hqdefault.jpg',
     category: 'Arsip Kota',
     description: 'Dokumentasi arsip visual sejarah perkembangan suasana Kota Bogor, Kebun Raya, dan Istana Buitenzorg masa lalu.',
   },
@@ -1451,7 +1451,7 @@ export const YOUTUBE_VIDEOS: YouTubeVideo[] = [
     youtubeId: 'F3k8BKpfKWQ',
     embedUrl: 'https://www.youtube.com/embed/F3k8BKpfKWQ',
     youtubeUrl: 'https://youtu.be/F3k8BKpfKWQ?si=eEUQMBwYBe9J0k2V',
-    thumbnail: generateAnimatedSvg("Jejak Kerajaan di Bogor (Pakuan Pajajaran & Tarumanagara)", 'video'),
+    thumbnail: 'https://img.youtube.com/vi/F3k8BKpfKWQ/hqdefault.jpg',
     category: 'Kerajaan',
     description: 'Kisah mendalam kejayaan Kerajaan Tarumanagara abad ke-5 M hingga Pakuan Pajajaran Prabu Siliwangi.',
   },
@@ -1461,7 +1461,7 @@ export const YOUTUBE_VIDEOS: YouTubeVideo[] = [
     youtubeId: 'qjr6PDRp3Yo',
     embedUrl: 'https://www.youtube.com/embed/qjr6PDRp3Yo',
     youtubeUrl: 'https://youtu.be/qjr6PDRp3Yo?si=Zmtk1TwdHGfBs-eD',
-    thumbnail: generateAnimatedSvg("Sejarah Pasar Bogor & Suryakencana", 'video'),
+    thumbnail: 'https://img.youtube.com/vi/qjr6PDRp3Yo/hqdefault.jpg',
     category: 'Perdagangan & Kuliner',
     description: 'Penelusuran sejarah denyut nadi perdagangan tertua di Pasar Bogor dan kawasan Pecinan Suryakencana.',
   },
@@ -1489,3 +1489,6 @@ Masyarakat Kota Bogor bertumbuh menjadi heterogen namun tetap mengakar pada kebu
 Monumen Tugu Kujang didirikan pada 4 Mei 1982 untuk menghormati ibu kota Pakuan Pajajaran. Senjata Kujang merupakan pusaka rakyat Sunda berlekuk 7 yang melambangkan keberanian, ketajaman akal budi, serta kedaulatan.
   `,
 };
+
+export { BOGOR_UMKM_DATABASE } from './umkmData';
+

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { HeritageLocation, UserProfile } from '../types';
 import { audioSynthesizer } from '../utils/audioSynthesizer';
+import { useLanguage } from '../utils/translations';
 
 interface QuestModalProps {
   location: HeritageLocation;
@@ -24,11 +25,14 @@ interface QuestModalProps {
 }
 
 export const QuestModal: React.FC<QuestModalProps> = ({
-  location,
+  location: initialLocation,
   onClose,
   onCompleteQuest,
   user,
 }) => {
+  const { lang, t, getLocalizedHeritage } = useLanguage();
+  const location = getLocalizedHeritage(initialLocation);
+
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState<boolean>(false);
@@ -47,7 +51,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
       audioSynthesizer.speak(
         location.audioNarration,
         () => setIsPlayingAudio(false),
-        () => setIsPlayingAudio(false)
+        () => setIsPlayingAudio(false),
+        lang === 'en' ? 'en-US' : 'id-ID'
       );
       setIsPlayingAudio(true);
     }
@@ -73,9 +78,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
       // Determine badge reward if score >= 3
       let badgeReward: string | undefined = undefined;
-      if (location.category === 'botani') badgeReward = 'Botani Master';
-      else if (location.category === 'sejarah') badgeReward = 'Penjelajah Pajajaran';
-      else if (location.category === 'kuliner') badgeReward = 'Foodie Legendaris';
+      if (location.category === 'botani' || location.category === 'Botany') badgeReward = lang === 'en' ? 'Botanical Master' : 'Botani Master';
+      else if (location.category === 'sejarah' || location.category === 'History') badgeReward = lang === 'en' ? 'Pajajaran Explorer' : 'Penjelajah Pajajaran';
+      else if (location.category === 'kuliner' || location.category === 'Culinary') badgeReward = lang === 'en' ? 'Legendary Foodie' : 'Foodie Legendaris';
 
       onCompleteQuest(location.id, location.xpReward, badgeReward);
     }
@@ -90,12 +95,15 @@ export const QuestModal: React.FC<QuestModalProps> = ({
   };
 
   const handleShare = () => {
-    const text = `Saya baru saja menyelesaikan Quest Trivia Sejarah "${location.name}" di SaBo (Saba Bogor) dengan skor ${score}/${triviaQuestions.length}! 🎉 Yuk belajar sejarah Bogor!`;
+    const text = lang === 'en'
+      ? `I just completed the "${location.name}" History Trivia Quest on Saba Bogor with a score of ${score}/${triviaQuestions.length}! 🎉 Explore Bogor's heritage!`
+      : `Saya baru saja menyelesaikan Quest Trivia Sejarah "${location.name}" di SaBo (Saba Bogor) dengan skor ${score}/${triviaQuestions.length}! 🎉 Yuk belajar sejarah Bogor!`;
+
     if (navigator.share) {
       navigator.share({ title: 'SaBo Quest Clear', text }).catch(() => {});
     } else {
       navigator.clipboard.writeText(text);
-      alert('Teks hasil quest berhasil disalin ke papan klip!');
+      alert(lang === 'en' ? 'Quest results copied to clipboard!' : 'Teks hasil quest berhasil disalin ke papan klip!');
     }
   };
 
@@ -155,7 +163,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
               <Volume2 className="w-4 h-4" />
             )}
             <span>
-              {isPlayingAudio ? 'Hentikan Audio Guide' : '🎧 Narasi Audio Guide'}
+              {isPlayingAudio ? t('audio_stop') : `🎧 ${t('audio_guide')}`}
             </span>
           </button>
 
@@ -180,21 +188,21 @@ export const QuestModal: React.FC<QuestModalProps> = ({
               className="flex items-center space-x-1 px-3 py-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/25 rounded-xl font-medium transition backdrop-blur-md"
             >
               <Navigation className="w-3.5 h-3.5" />
-              <span>Rute Nyata</span>
+              <span>{t('route_google_maps')}</span>
             </a>
           </div>
         </div>
 
         {/* Modal Body / Quiz Content */}
         <div className="p-4 sm:p-6 flex-1">
-          {!isQuizFinished ? (
+          {!isQuizFinished && currentQ ? (
             <div>
               {/* Question progress */}
               <div className="flex justify-between items-center text-xs font-semibold text-slate-300 mb-2">
                 <span>
-                  Pertanyaan {currentQuestionIdx + 1} dari {triviaQuestions.length}
+                  {t('question')} {currentQuestionIdx + 1} {t('of')} {triviaQuestions.length}
                 </span>
-                <span className="text-sky-300 font-bold">Skor Sementara: {score}</span>
+                <span className="text-sky-300 font-bold">{t('current_score')}: {score}</span>
               </div>
 
               {/* Progress bar */}
@@ -257,7 +265,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
               {isAnswered && (
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-4 text-xs backdrop-blur-md">
                   <span className="font-bold text-sky-300 block mb-1">
-                    💡 Penjelasan Sejarah:
+                    💡 {t('history_explanation')}:
                   </span>
                   <p className="text-slate-300 leading-relaxed">{currentQ.explanation}</p>
                 </div>
@@ -270,8 +278,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 >
                   <span>
                     {currentQuestionIdx + 1 < triviaQuestions.length
-                      ? 'Lanjut Soal Berikutnya'
-                      : 'Lihat Hasil Quest'}
+                      ? t('next_question')
+                      : t('view_results')}
                   </span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -286,10 +294,10 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
               <div>
                 <h3 className="text-xl font-extrabold text-white">
-                  Quest Selesai! 🎉
+                  {t('quest_cleared')}
                 </h3>
                 <p className="text-xs text-slate-300 mt-1">
-                  Kamu telah menyelesaikan trivia sejarah untuk{' '}
+                  {t('completed_trivia_for')}{' '}
                   <span className="text-sky-300 font-bold">
                     {location.name}
                   </span>
@@ -299,7 +307,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
               {/* Score card */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 max-w-sm mx-auto flex items-center justify-around text-center backdrop-blur-md">
                 <div>
-                  <span className="text-xs text-slate-400">Skor Akhir</span>
+                  <span className="text-xs text-slate-400">{t('final_score')}</span>
                   <p className="text-2xl font-extrabold text-sky-300">
                     {score} / {triviaQuestions.length}
                   </p>
@@ -308,7 +316,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 <div className="w-px h-10 bg-white/10" />
 
                 <div>
-                  <span className="text-xs text-slate-400">Bonus XP</span>
+                  <span className="text-xs text-slate-400">{t('bonus_xp')}</span>
                   <p className="text-2xl font-extrabold text-emerald-400">
                     +{location.xpReward} XP
                   </p>
@@ -318,7 +326,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
               {/* Unique Facts List */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left text-xs space-y-1.5 backdrop-blur-md">
                 <span className="font-bold text-sky-300 block mb-1">
-                  🎯 Fakta Unik Penting:
+                  🎯 {t('key_facts')}:
                 </span>
                 {location.uniqueFacts.map((fact, idx) => (
                   <p key={idx} className="text-slate-300 flex items-start gap-1.5">
@@ -335,7 +343,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                   className="flex-1 py-2.5 bg-white/10 hover:bg-white/15 text-sky-300 font-bold rounded-2xl border border-white/10 transition flex items-center justify-center space-x-2 text-xs backdrop-blur-md"
                 >
                   <Share2 className="w-4 h-4" />
-                  <span>Bagikan Hasil</span>
+                  <span>{t('share_result')}</span>
                 </button>
 
                 <button
@@ -343,7 +351,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                   className="py-2.5 px-4 bg-white/10 hover:bg-white/15 text-slate-300 font-semibold rounded-2xl border border-white/10 transition flex items-center justify-center space-x-1 text-xs backdrop-blur-md"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Ulangi</span>
+                  <span>{t('repeat')}</span>
                 </button>
 
                 <button
@@ -353,7 +361,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                   }}
                   className="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-2xl transition text-xs shadow-lg border border-sky-400/30"
                 >
-                  Tutup & Klaim XP
+                  {t('close_claim')}
                 </button>
               </div>
             </div>

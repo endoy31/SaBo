@@ -13,8 +13,10 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Globe,
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { useLanguage } from '../utils/translations';
 
 interface NavbarProps {
   activeTab: string;
@@ -41,32 +43,54 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme = 'dark',
   setTheme,
 }) => {
+  const { lang, setLang, t } = useLanguage();
   const nextLevelXp = user.level * 250;
   const xpPercent = Math.min(100, Math.round((user.xp / nextLevelXp) * 100));
 
   return (
-    <header className={`sticky top-0 z-40 backdrop-blur-2xl transition-colors duration-300 shadow-2xl ${
-      theme === 'light'
-        ? 'bg-[#f4efe4]/90 text-[#0d2e22] border-b border-amber-800/20'
-        : 'bg-[#071c14]/85 text-[#f7f4eb] border-b border-amber-900/30'
-    }`}>
-      {/* Top Strip info */}
-      <div className={`backdrop-blur-md border-b text-xs px-4 py-1.5 flex flex-wrap justify-between items-center transition-colors ${
+    <header
+      className={`sticky top-0 z-40 backdrop-blur-2xl transition-colors duration-300 shadow-2xl ${
         theme === 'light'
-          ? 'bg-amber-800/10 border-amber-800/15 text-[#1a4030]'
-          : 'bg-amber-950/25 border-amber-900/20 text-amber-100/90'
-      }`}>
+          ? 'bg-[#f4efe4]/90 text-[#0d2e22] border-b border-amber-800/20'
+          : 'bg-[#071c14]/85 text-[#f7f4eb] border-b border-amber-900/30'
+      }`}
+    >
+      {/* Top Strip info */}
+      <div
+        className={`backdrop-blur-md border-b text-xs px-4 py-1.5 flex flex-wrap justify-between items-center transition-colors ${
+          theme === 'light'
+            ? 'bg-amber-800/10 border-amber-800/15 text-[#1a4030]'
+            : 'bg-amber-950/25 border-amber-900/20 text-amber-100/90'
+        }`}
+      >
         <div className="flex items-center space-x-3">
           <span className="font-semibold text-amber-600 dark:text-amber-300 flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-300" /> SaBo • Saba Bogor 2026
           </span>
           <span className="hidden sm:inline text-emerald-800">|</span>
           <span className="hidden sm:inline opacity-80">
-            Eksplorasi Heritage & Gamifikasi Kota Bogor
+            {t('app_tagline')}
           </span>
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Bilingual Language Switcher Toggle */}
+          <button
+            onClick={() => setLang(lang === 'id' ? 'en' : 'id')}
+            className={`flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold transition backdrop-blur-md shadow-sm border ${
+              lang === 'en'
+                ? 'bg-amber-500/25 text-amber-300 border-amber-400/50 hover:bg-amber-500/35'
+                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+            }`}
+            title={lang === 'id' ? 'Switch to English (Tourist Mode)' : 'Ganti ke Bahasa Indonesia'}
+          >
+            <Globe className="w-3.5 h-3.5 text-amber-300" />
+            <span>{lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN'}</span>
+            <span className="text-[9px] opacity-75 font-normal ml-0.5">
+              ({lang === 'id' ? 'English' : 'Indonesia'})
+            </span>
+          </button>
+
           {/* Theme Switcher Toggle (Light vs Dark Mode) */}
           {setTheme && (
             <button
@@ -76,17 +100,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-amber-800/15 hover:bg-amber-800/25 text-amber-900 border-amber-800/30'
                   : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-amber-200 border-emerald-500/40'
               }`}
-              title={theme === 'dark' ? 'Ganti ke Mode Terang (Krem & Hijau Segar)' : 'Ganti ke Mode Gelap (Hijau Tua)'}
+              title={
+                theme === 'dark'
+                  ? lang === 'en'
+                    ? 'Switch to Light Mode'
+                    : 'Ganti ke Mode Terang'
+                  : lang === 'en'
+                  ? 'Switch to Dark Mode'
+                  : 'Ganti ke Mode Gelap'
+              }
             >
               {theme === 'dark' ? (
                 <>
                   <Sun className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Terang</span>
+                  <span>{t('theme_light')}</span>
                 </>
               ) : (
                 <>
                   <Moon className="w-3.5 h-3.5 text-emerald-800" />
-                  <span>Gelap</span>
+                  <span>{t('theme_dark')}</span>
                 </>
               )}
             </button>
@@ -100,10 +132,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40'
                 : 'bg-stone-500/10 text-stone-500 border border-stone-400/20'
             }`}
-            title="Sistem Deteksi Lokasi GPS"
+            title="GPS Location System"
           >
             <MapPin className="w-3 h-3" />
-            <span>{isGpsActive ? 'GPS Aktif' : 'GPS Mati'}</span>
+            <span>{isGpsActive ? t('gps_active') : t('gps_off')}</span>
           </button>
 
           {/* Offline Map Mode Toggle */}
@@ -114,10 +146,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-amber-700/30 text-amber-800 dark:text-amber-200 border border-amber-600/40'
                 : 'bg-emerald-600/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40'
             }`}
-            title="Mode Peta Luring saat Sinyal Lemah"
+            title="Offline Map Mode"
           >
             {isOffline ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
-            <span>{isOffline ? 'Mode Luring' : 'Mode Daring'}</span>
+            <span>{isOffline ? t('mode_offline') : t('mode_online')}</span>
           </button>
         </div>
       </div>
@@ -196,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Compass className="w-4 h-4 text-emerald-400" />
-            <span>Peta Interaktif & Quest</span>
+            <span>{t('nav_map')}</span>
           </button>
 
           <button
@@ -208,7 +240,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Palette className="w-4 h-4 text-amber-400" />
-            <span>Creator Hub & Direct Link</span>
+            <span>{t('nav_creators')}</span>
           </button>
 
           <button
@@ -220,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <BookOpen className="w-4 h-4 text-emerald-300" />
-            <span>Deep Heritage & Video Arsip</span>
+            <span>{t('nav_heritage')}</span>
           </button>
 
           <button
@@ -232,7 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Calendar className="w-4 h-4 text-emerald-400" />
-            <span>Tourism Planner & Kuliner</span>
+            <span>{t('nav_planner')}</span>
           </button>
 
           <button
@@ -244,7 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <MessageSquare className="w-4 h-4 text-amber-300" />
-            <span>Ulasan Komunitas</span>
+            <span>{t('nav_community')}</span>
           </button>
 
           <button
@@ -252,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center space-x-1.5 px-4 py-2 rounded-xl font-medium text-amber-100/80 hover:bg-amber-900/30 hover:text-amber-100 whitespace-nowrap ml-auto border border-transparent"
           >
             <User className="w-4 h-4 text-amber-300/80" />
-            <span>Profil Saya</span>
+            <span>{t('nav_profile')}</span>
           </button>
         </div>
       </nav>

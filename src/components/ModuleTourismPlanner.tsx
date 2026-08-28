@@ -29,6 +29,7 @@ import {
 } from '../data/bogorData';
 import { Itinerary, ItineraryItem } from '../types';
 import { formatDistance, calculateDistanceMeters, UserCoordinates } from '../utils/geolocationManager';
+import { useLanguage } from '../utils/translations';
 
 interface ModuleTourismPlannerProps {
   userPos: UserCoordinates;
@@ -44,15 +45,21 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
   savedItineraries,
   onSaveItinerary,
 }) => {
+  const { lang, t } = useLanguage();
+
   const [activeTab, setActiveTab] = useState<
     'googletravel' | 'kuliner' | 'restoran' | 'wisata' | 'instansi' | 'umkm'
   >('googletravel');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [googleTravelQuery, setGoogleTravelQuery] = useState<string>('Hotel & Tempat Wisata di Bogor');
+  const [googleTravelQuery, setGoogleTravelQuery] = useState<string>(
+    lang === 'en' ? 'Hotels & Attractions in Bogor' : 'Hotel & Tempat Wisata di Bogor'
+  );
 
   // Itinerary Planner state
   const [currentItineraryItems, setCurrentItineraryItems] = useState<ItineraryItem[]>([]);
-  const [itineraryTitle, setItineraryTitle] = useState<string>('Wisata Seharian Bogor 2026');
+  const [itineraryTitle, setItineraryTitle] = useState<string>(
+    lang === 'en' ? 'One Day Bogor Trip 2026' : 'Wisata Seharian Bogor 2026'
+  );
 
   // Add place to itinerary
   const handleAddToItinerary = (
@@ -62,7 +69,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
     estCost: number
   ) => {
     if (currentItineraryItems.some((item) => item.placeId === placeId)) {
-      alert('Destinasi ini sudah ada di daftar Itinerary kamu!');
+      alert(lang === 'en' ? 'This destination is already in your Itinerary!' : 'Destinasi ini sudah ada di daftar Itinerary kamu!');
       return;
     }
 
@@ -84,7 +91,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
 
   const handleSaveItinerary = () => {
     if (currentItineraryItems.length === 0) {
-      alert('Pilih minimal 1 tempat wisata/kuliner sebelum menyimpan itinerary!');
+      alert(lang === 'en' ? 'Select at least 1 destination before saving your itinerary!' : 'Pilih minimal 1 tempat wisata/kuliner sebelum menyimpan itinerary!');
       return;
     }
 
@@ -102,11 +109,11 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
     };
 
     onSaveItinerary(newItinerary);
-    alert('Itinerary Berhasil Disimpan ke Profil Kamu!');
+    alert(lang === 'en' ? 'Itinerary successfully saved to your profile!' : 'Itinerary Berhasil Disimpan ke Profil Kamu!');
   };
 
   const handleOpenGoogleTravelSearch = () => {
-    const query = encodeURIComponent(googleTravelQuery || 'Wisata Bogor');
+    const query = encodeURIComponent(googleTravelQuery || (lang === 'en' ? 'Bogor Tourism' : 'Wisata Bogor'));
     window.open(`https://www.google.com/travel/search?q=${query}`, '_blank');
   };
 
@@ -118,15 +125,15 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center space-x-2 bg-emerald-500/15 light:bg-emerald-800/10 text-emerald-300 light:text-emerald-900 border border-emerald-400/30 light:border-emerald-600/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md">
             <Globe className="w-4 h-4 text-emerald-400 light:text-emerald-700" />
-            <span>Smart Tourism Planner • Terintegrasi Google Travel</span>
+            <span>{t('travel_planner_badge')}</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white light:text-[#0d2e22]">
-            Panduan Wisata & Integrasi Google Travel Bogor 2026
+            {t('travel_planner_title')}
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 light:text-[#3b2818] leading-relaxed">
-            Eksplorasi destinasi unggulan Kota Bogor dengan integrasi data real-time Google Travel, peta hotel, estimasi harga tiket, tempat kuliner legendaris, serta pembuat susunan itinerary perjalanan.
+            {t('travel_planner_desc')}
           </p>
 
           {/* Tab Selection */}
@@ -151,7 +158,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-slate-300 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              <span>🍜 Kuliner Legendaris ({LEGENDARY_CUISINE.length})</span>
+              <span>🍜 {t('filter_kuliner')} ({LEGENDARY_CUISINE.length})</span>
             </button>
 
             <button
@@ -162,7 +169,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-slate-300 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              <span>🍽️ Restoran Hype ({MODERN_RESTAURANTS.length})</span>
+              <span>🍽️ {t('filter_restoran')} ({MODERN_RESTAURANTS.length})</span>
             </button>
 
             <button
@@ -173,7 +180,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-slate-300 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              <span>🎡 Destinasi Wisata ({TOURISM_DESTINATIONS.length})</span>
+              <span>🎡 {t('filter_wisata')} ({TOURISM_DESTINATIONS.length})</span>
             </button>
 
             <button
@@ -184,7 +191,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-slate-300 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              <span>🛍️ Sentra UMKM ({UMKM_CENTERS.length})</span>
+              <span>🛍️ {t('filter_umkm')} ({UMKM_CENTERS.length})</span>
             </button>
 
             <button
@@ -195,7 +202,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-slate-300 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              <span>🏢 Instansi ({GOVERNMENT_INSTITUTIONS.length})</span>
+              <span>🏢 {t('filter_instansi')} ({GOVERNMENT_INSTITUTIONS.length})</span>
             </button>
           </div>
         </div>
@@ -215,13 +222,15 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2 text-xs font-bold text-amber-300 light:text-amber-900">
                       <Globe className="w-4 h-4 text-emerald-400 light:text-emerald-700" />
-                      <span>Google Travel Explore • Bogor & Sekitarnya</span>
+                      <span>Google Travel Explore • Bogor</span>
                     </div>
                     <h3 className="text-xl font-extrabold text-white light:text-[#0d2e22]">
-                      Jelajah Rute & Penerbangan Google Travel
+                      {lang === 'en' ? 'Explore Routes & Travel on Google Travel' : 'Jelajah Rute & Penerbangan Google Travel'}
                     </h3>
                     <p className="text-xs text-slate-300 light:text-[#3b2818] max-w-xl">
-                      Akses langsung peta interaktif Google Travel untuk mengecek harga akomodasi, hotel, rute perjalanan, dan tempat wisata populer Kota Bogor secara realtime.
+                      {lang === 'en'
+                        ? 'Direct access to Google Travel live map for hotels, real-time rates, and top attractions in Bogor City.'
+                        : 'Akses langsung peta interaktif Google Travel untuk mengecek harga akomodasi, hotel, rute perjalanan, dan tempat wisata populer Kota Bogor secara realtime.'}
                     </p>
                   </div>
 
@@ -232,21 +241,21 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                     className="px-5 py-3 bg-gradient-to-r from-emerald-700 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold text-xs rounded-2xl shadow-xl border border-amber-500/40 flex items-center space-x-2 transition transform hover:scale-105 whitespace-nowrap"
                   >
                     <ExternalLink className="w-4 h-4 text-amber-200" />
-                    <span>Buka Google Travel Explore</span>
+                    <span>{lang === 'en' ? 'Open Google Travel Explore' : 'Buka Google Travel Explore'}</span>
                   </a>
                 </div>
 
                 {/* Google Travel Search Interactive Input */}
                 <div className="bg-slate-900/60 light:bg-white/90 p-4 rounded-2xl border border-white/10 light:border-amber-800/20 space-y-3">
                   <label className="block text-xs font-bold text-amber-200 light:text-[#0d2e22]">
-                    🔍 Cari Langsung di Google Travel:
+                    {lang === 'en' ? '🔍 Search Directly in Google Travel:' : '🔍 Cari Langsung di Google Travel:'}
                   </label>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={googleTravelQuery}
                       onChange={(e) => setGoogleTravelQuery(e.target.value)}
-                      placeholder="Contoh: Hotel Murah Dekat Kebun Raya Bogor"
+                      placeholder={lang === 'en' ? 'e.g. Cheap Hotels near Bogor Botanical Gardens' : 'Contoh: Hotel Murah Dekat Kebun Raya Bogor'}
                       className="flex-1 bg-slate-950 light:bg-[#f8f5ed] border border-white/15 light:border-amber-800/20 rounded-xl px-3.5 py-2 text-xs text-white light:text-[#0d2e22] focus:outline-none focus:border-amber-500 font-medium"
                     />
                     <button
@@ -254,7 +263,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                       className="px-4 py-2 bg-emerald-800/40 hover:bg-emerald-800/60 light:bg-emerald-800/20 light:hover:bg-emerald-800/30 text-emerald-200 light:text-emerald-900 border border-emerald-600/40 text-xs font-bold rounded-xl transition flex items-center justify-center space-x-1.5"
                     >
                       <Search className="w-3.5 h-3.5" />
-                      <span>Cari di Google Travel</span>
+                      <span>{lang === 'en' ? 'Search in Google Travel' : 'Cari di Google Travel'}</span>
                     </button>
                   </div>
                 </div>
@@ -272,10 +281,10 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                     </div>
                     <div>
                       <h4 className="font-bold text-xs text-white light:text-[#0d2e22] group-hover:text-amber-300 light:group-hover:text-amber-800 flex items-center gap-1">
-                        Hotel Bogor <ExternalLink className="w-3 h-3 opacity-60" />
+                        {lang === 'en' ? 'Bogor Hotels' : 'Hotel Bogor'} <ExternalLink className="w-3 h-3 opacity-60" />
                       </h4>
                       <p className="text-[11px] text-slate-300 light:text-[#3b2818]/70 mt-0.5">
-                        Cek penginapan, resor & vila terbaik di Google Travel
+                        {lang === 'en' ? 'Browse top stays, villas & resorts on Google Travel' : 'Cek penginapan, resor & vila terbaik di Google Travel'}
                       </p>
                     </div>
                   </a>
@@ -291,10 +300,10 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                     </div>
                     <div>
                       <h4 className="font-bold text-xs text-white light:text-[#0d2e22] group-hover:text-emerald-300 light:group-hover:text-emerald-800 flex items-center gap-1">
-                        Aktivitas & Wisata <ExternalLink className="w-3 h-3 opacity-60" />
+                        {lang === 'en' ? 'Activities & Sights' : 'Aktivitas & Wisata'} <ExternalLink className="w-3 h-3 opacity-60" />
                       </h4>
                       <p className="text-[11px] text-slate-300 light:text-[#3b2818]/70 mt-0.5">
-                        Rekomendasi atraksi dan aktivitas seru versi Google
+                        {lang === 'en' ? 'Recommended attractions and leisure by Google' : 'Rekomendasi atraksi dan aktivitas seru versi Google'}
                       </p>
                     </div>
                   </a>
@@ -310,10 +319,10 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                     </div>
                     <div>
                       <h4 className="font-bold text-xs text-white light:text-[#0d2e22] group-hover:text-sky-300 light:group-hover:text-sky-800 flex items-center gap-1">
-                        Tiket Transportasi <ExternalLink className="w-3 h-3 opacity-60" />
+                        {lang === 'en' ? 'Transport & Tickets' : 'Tiket Transportasi'} <ExternalLink className="w-3 h-3 opacity-60" />
                       </h4>
                       <p className="text-[11px] text-slate-300 light:text-[#3b2818]/70 mt-0.5">
-                        Penerbangan & rute kereta ke area Bogor
+                        {lang === 'en' ? 'Flights and train routes to Greater Bogor' : 'Penerbangan & rute kereta ke area Bogor'}
                       </p>
                     </div>
                   </a>
@@ -323,7 +332,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
               {/* Recommended Tourism Locations Quick Grid from Google Travel */}
               <div className="bg-slate-900/40 light:bg-[#f4efe4]/90 p-5 rounded-3xl border border-white/10 light:border-amber-800/20 space-y-4">
                 <h3 className="font-extrabold text-sm text-amber-200 light:text-[#0d2e22] flex items-center gap-2">
-                  <Star className="w-4 h-4 text-amber-400 fill-current" /> Top Google Travel Rated Destinations di Bogor
+                  <Star className="w-4 h-4 text-amber-400 fill-current" /> {lang === 'en' ? 'Top Google Travel Rated Destinations in Bogor' : 'Top Google Travel Rated Destinations di Bogor'}
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -383,7 +392,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                 <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 light:text-amber-900/60" />
                 <input
                   type="text"
-                  placeholder="Cari tempat, makanan, resto, atau area..."
+                  placeholder={lang === 'en' ? 'Search places, dishes, restaurants, or area...' : 'Cari tempat, makanan, resto, atau area...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-900/60 light:bg-white/90 backdrop-blur-md border border-white/10 light:border-amber-800/20 rounded-xl pl-10 pr-3 py-2 text-xs text-white light:text-[#0d2e22] placeholder-slate-400 light:placeholder-amber-900/40 focus:outline-none focus:border-amber-500"
@@ -425,7 +434,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
 
                     <div className="bg-white/5 light:bg-white/80 p-3 rounded-2xl border border-white/10 light:border-amber-800/20 text-[11px] space-y-1 backdrop-blur-md">
                       <span className="font-bold text-amber-300 light:text-amber-800 block">
-                        📍 Rekomendasi Warung Legendaris:
+                        📍 {lang === 'en' ? 'Recommended Legendary Stalls:' : 'Rekomendasi Warung Legendaris:'}
                       </span>
                       {item.recommendedSpots.map((spot, idx) => (
                         <div key={idx} className="text-slate-300 light:text-[#3b2818] flex justify-between">
@@ -443,7 +452,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                           handleAddToItinerary(
                             item.id,
                             item.name,
-                            'Kuliner Legendaris',
+                            lang === 'en' ? 'Legendary Food' : 'Kuliner Legendaris',
                             25000
                           )
                         }
@@ -458,7 +467,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                         target="_blank"
                         rel="noreferrer"
                         className="p-2.5 bg-emerald-900/30 light:bg-emerald-800/15 text-emerald-300 light:text-emerald-800 rounded-xl border border-emerald-600/30 flex items-center justify-center hover:scale-105 transition"
-                        title="Lihat di Google Travel"
+                        title="Google Travel"
                       >
                         <Globe className="w-4 h-4" />
                       </a>
@@ -511,7 +520,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                         handleAddToItinerary(
                           resto.id,
                           resto.name,
-                          'Restoran Modern',
+                          lang === 'en' ? 'Modern Restaurant' : 'Restoran Modern',
                           75000
                         )
                       }
@@ -526,7 +535,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                       target="_blank"
                       rel="noreferrer"
                       className="p-2.5 bg-emerald-900/30 light:bg-emerald-800/15 text-emerald-300 light:text-emerald-800 rounded-xl border border-emerald-600/30 flex items-center justify-center hover:scale-105 transition"
-                      title="Lihat di Google Travel"
+                      title="Google Travel"
                     >
                       <Globe className="w-4 h-4" />
                     </a>
@@ -553,7 +562,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                       className="w-full h-full object-cover"
                     />
                     <span className="absolute top-2.5 right-2.5 text-[10px] font-extrabold bg-gradient-to-r from-emerald-700 to-amber-700 text-amber-100 px-2.5 py-0.5 rounded-full shadow border border-amber-500/30 backdrop-blur-md">
-                      Tiket: {dest.ticketPrice}
+                      {lang === 'en' ? 'Ticket' : 'Tiket'}: {dest.ticketPrice}
                     </span>
                   </div>
 
@@ -575,7 +584,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                         handleAddToItinerary(
                           dest.id,
                           dest.name,
-                          'Destinasi Wisata',
+                          lang === 'en' ? 'Tourism Destination' : 'Destinasi Wisata',
                           30000
                         )
                       }
@@ -590,7 +599,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                       target="_blank"
                       rel="noreferrer"
                       className="p-2.5 bg-emerald-900/30 light:bg-emerald-800/15 text-emerald-300 light:text-emerald-800 rounded-xl border border-emerald-600/30 flex items-center justify-center hover:scale-105 transition"
-                      title="Cek di Google Travel"
+                      title="Google Travel"
                     >
                       <Globe className="w-4 h-4" />
                     </a>
@@ -618,7 +627,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
                     />
                     <div>
                       <span className="text-[10px] font-bold uppercase text-amber-300 light:text-amber-800 bg-amber-900/30 light:bg-amber-800/15 px-2.5 py-0.5 rounded-full border border-amber-600/30">
-                        Sentra UMKM Kota
+                        {t('filter_umkm')}
                       </span>
                       <h3 className="font-extrabold text-sm text-white light:text-[#0d2e22] mt-1.5">
                         {u.name}
@@ -669,17 +678,17 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
             <div className="flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-amber-300 light:text-amber-800" />
               <h3 className="font-extrabold text-sm text-white light:text-[#0d2e22]">
-                Itinerary Perjalanan Saya
+                {t('my_itinerary')}
               </h3>
             </div>
             <span className="text-xs text-amber-300 light:text-amber-900 font-bold bg-amber-900/30 light:bg-amber-800/15 border border-amber-600/30 px-2.5 py-0.5 rounded-full backdrop-blur-md">
-              {currentItineraryItems.length} Tempat
+              {currentItineraryItems.length} {lang === 'en' ? 'Places' : 'Tempat'}
             </span>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 light:text-[#3b2818]/80 mb-1">
-              Judul Itinerary:
+              {t('itinerary_title_label')}
             </label>
             <input
               type="text"
@@ -693,7 +702,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {currentItineraryItems.length === 0 ? (
               <div className="text-center py-8 text-slate-400 light:text-[#3b2818]/70 text-xs">
-                Belum ada lokasi ditambahkan. Klik tombol <span className="text-amber-300 light:text-amber-800 font-bold">+ Itinerary</span> pada pilihan kuliner / destinasi.
+                {t('no_places_added')}
               </div>
             ) : (
               currentItineraryItems.map((item, idx) => (
@@ -727,7 +736,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
           {/* Summary Calculation */}
           <div className="bg-white/5 light:bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 light:border-amber-800/20 text-xs space-y-1">
             <div className="flex justify-between text-slate-300 light:text-[#0d2e22]">
-              <span>Total Estimasi Biaya (2026):</span>
+              <span>{t('est_total_cost')}:</span>
               <span className="text-emerald-400 light:text-emerald-700 font-extrabold text-sm">
                 Rp{' '}
                 {currentItineraryItems
@@ -742,7 +751,7 @@ export const ModuleTourismPlanner: React.FC<ModuleTourismPlannerProps> = ({
             className="w-full py-3 bg-gradient-to-r from-emerald-700 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold rounded-2xl shadow-lg transition flex items-center justify-center space-x-2 text-xs border border-amber-500/30"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>Simpan Itinerary ke Profil Saya</span>
+            <span>{t('save_itinerary_btn')}</span>
           </button>
         </div>
       </div>

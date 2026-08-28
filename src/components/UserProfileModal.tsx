@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { useLanguage } from '../utils/translations';
 
 interface UserProfileModalProps {
   user: UserProfile;
@@ -29,6 +30,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onUpdateProfile,
   onSimpleEmailLogin,
 }) => {
+  const { lang, t } = useLanguage();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [loginEmailInput, setLoginEmailInput] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -46,13 +48,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     e.preventDefault();
     onUpdateProfile(formData);
     setIsEditing(false);
-    alert('Profil berhasil diperbarui!');
+    alert(lang === 'en' ? 'Profile updated successfully!' : 'Profil berhasil diperbarui!');
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmailInput || !loginEmailInput.includes('@')) {
-      alert('Masukkan alamat email yang valid!');
+      alert(lang === 'en' ? 'Please enter a valid email address!' : 'Masukkan alamat email yang valid!');
       return;
     }
     onSimpleEmailLogin(loginEmailInput);
@@ -67,7 +69,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="flex items-center space-x-2">
             <User className="w-5 h-5 text-amber-300" />
             <h3 className="font-extrabold text-base text-amber-100">
-              Profil Pengguna SaBo
+              {t('user_profile_title')}
             </h3>
           </div>
           <button
@@ -83,12 +85,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="bg-amber-950/20 backdrop-blur-md p-4 rounded-2xl border border-amber-800/30 space-y-2 text-xs">
             <div className="flex justify-between items-center">
               <span className="font-bold text-amber-300 flex items-center gap-1">
-                <Mail className="w-4 h-4 text-emerald-400" /> Masuk Sederhana dengan Email
+                <Mail className="w-4 h-4 text-emerald-400" /> {t('simple_login_email')}
               </span>
-              <span className="text-[10px] text-amber-200/60">Tanpa Kata Sandi</span>
+              <span className="text-[10px] text-amber-200/60">{t('passwordless')}</span>
             </div>
             <p className="text-amber-100/80 text-[11px]">
-              Gunakan email kamu untuk menyimpan atau memuat progress XP, level, dan badge.
+              {t('login_email_desc')}
             </p>
 
             <form onSubmit={handleLoginSubmit} className="flex gap-2 pt-1">
@@ -104,7 +106,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 type="submit"
                 className="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs transition border border-sky-400/30 shadow-lg"
               >
-                Masuk / Load
+                {t('login_button')}
               </button>
             </form>
           </div>
@@ -128,7 +130,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
                 <p className="text-xs text-slate-400 truncate">{user.email}</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  {user.schoolOrInst || 'Siswa / Penjelajah Kota Bogor'} • {user.address}
+                  {user.schoolOrInst || (lang === 'en' ? 'Student / Bogor Explorer' : 'Siswa / Penjelajah Kota Bogor')} • {user.address}
                 </p>
               </div>
             </div>
@@ -136,7 +138,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             {/* Level Progress Bar */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-slate-300">
-                <span>Progress XP Level Berikutnya</span>
+                <span>{t('next_level_progress')}</span>
                 <span className="text-sky-300 font-bold">
                   {user.xp} / {nextLevelXp} XP
                 </span>
@@ -154,14 +156,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <h4 className="text-xs font-bold uppercase text-sky-300 tracking-wider">
-                Informasi & Profil Diri
+                {t('profile_info_header')}
               </h4>
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className="text-xs text-sky-300 hover:underline flex items-center gap-1 font-semibold"
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                <span>{isEditing ? 'Batal Edit' : 'Edit Profil'}</span>
+                <span>{isEditing ? (lang === 'en' ? 'Cancel' : 'Batal Edit') : t('edit_profile_btn')}</span>
               </button>
             </div>
 
@@ -185,7 +187,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-slate-300 mb-1 font-semibold">
-                      Sekolah / Instansi:
+                      {lang === 'en' ? 'School / Institution:' : 'Sekolah / Instansi:'}
                     </label>
                     <input
                       type="text"
@@ -202,7 +204,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
                   <div>
                     <label className="block text-slate-300 mb-1 font-semibold">
-                      Alamat di Bogor:
+                      {lang === 'en' ? 'Address in Bogor:' : 'Alamat di Bogor:'}
                     </label>
                     <input
                       type="text"
@@ -220,23 +222,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   className="w-full py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-2xl transition flex items-center justify-center space-x-1 shadow-lg border border-sky-400/30"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Simpan Perubahan</span>
+                  <span>{t('save_changes_btn')}</span>
                 </button>
               </form>
             ) : (
               <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10 text-xs space-y-2 backdrop-blur-md">
                 <div className="flex justify-between border-b border-white/10 pb-2">
-                  <span className="text-slate-400">Sekolah / Komunitas:</span>
+                  <span className="text-slate-400">{lang === 'en' ? 'School / Community:' : 'Sekolah / Komunitas:'}</span>
                   <span className="font-semibold text-white">
-                    {user.schoolOrInst || 'Siswa SMA/SMK Bogor'}
+                    {user.schoolOrInst || (lang === 'en' ? 'High School / Explorer' : 'Siswa SMA/SMK Bogor')}
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-white/10 pb-2">
-                  <span className="text-slate-400">Alamat Tempat Tinggal:</span>
+                  <span className="text-slate-400">{lang === 'en' ? 'Residential Address:' : 'Alamat Tempat Tinggal:'}</span>
                   <span className="font-semibold text-white">{user.address}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Tanggal Bergabung:</span>
+                  <span className="text-slate-400">{lang === 'en' ? 'Joined Date:' : 'Tanggal Bergabung:'}</span>
                   <span className="font-semibold text-white">{user.joinDate}</span>
                 </div>
               </div>
@@ -246,7 +248,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Unlocked Badges Section */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase text-sky-300 tracking-wider flex items-center gap-1">
-              <Award className="w-4 h-4 text-sky-400" /> Lencana Achievement Terbuka ({user.badges.length})
+              <Award className="w-4 h-4 text-sky-400" /> {t('unlocked_badges')} ({user.badges.length})
             </h4>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -270,7 +272,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {user.savedItineraries.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-bold uppercase text-sky-300 tracking-wider flex items-center gap-1">
-                <Calendar className="w-4 h-4 text-sky-400" /> Saved Itineraries ({user.savedItineraries.length})
+                <Calendar className="w-4 h-4 text-sky-400" /> {t('saved_itineraries')} ({user.savedItineraries.length})
               </h4>
               <div className="space-y-2">
                 {user.savedItineraries.map((it) => (
@@ -281,7 +283,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <div>
                       <h5 className="font-extrabold text-white">{it.title}</h5>
                       <span className="text-[10px] text-slate-400">
-                        {it.items.length} Destinasi • {it.date}
+                        {it.items.length} {lang === 'en' ? 'Destinations' : 'Destinasi'} • {it.date}
                       </span>
                     </div>
                     <span className="text-emerald-400 font-extrabold">

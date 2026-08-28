@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { CommunityReview, UserProfile } from '../types';
 import { HERITAGE_LOCATIONS } from '../data/bogorData';
+import { useLanguage } from '../utils/translations';
 
 interface ModuleCommunityReviewsProps {
   user: UserProfile;
@@ -25,6 +26,8 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
   onAddReview,
   onLikeReview,
 }) => {
+  const { lang, t, getLocalizedHeritage } = useLanguage();
+
   const [selectedPlaceId, setSelectedPlaceId] = useState<string>(
     HERITAGE_LOCATIONS[0].id
   );
@@ -39,22 +42,23 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) {
-      alert('Tulis ulasan kunjungan kamu terlebih dahulu!');
+      alert(lang === 'en' ? 'Please write your visit review first!' : 'Tulis ulasan kunjungan kamu terlebih dahulu!');
       return;
     }
 
     const matchedLoc = HERITAGE_LOCATIONS.find((l) => l.id === selectedPlaceId);
+    const localizedLoc = matchedLoc ? getLocalizedHeritage(matchedLoc) : null;
 
     const newRev: CommunityReview = {
       id: `rev_${Date.now()}`,
       placeId: selectedPlaceId,
-      placeName: matchedLoc?.name || 'Destinasi Bogor',
+      placeName: localizedLoc?.name || matchedLoc?.name || 'Destinasi Bogor',
       userEmail: user.email,
       userName: user.username,
       userAvatar: user.avatar,
       rating,
       comment: commentText,
-      timestamp: new Date().toLocaleDateString('id-ID', {
+      timestamp: new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -64,7 +68,7 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
 
     onAddReview(newRev);
     setCommentText('');
-    alert('Ulasan kamu berhasil dikirim!');
+    alert(lang === 'en' ? 'Your review has been submitted successfully!' : 'Ulasan kamu berhasil dikirim!');
   };
 
   return (
@@ -75,15 +79,15 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center space-x-2 bg-sky-500/15 text-sky-300 border border-sky-400/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md">
             <MessageSquare className="w-4 h-4 text-sky-400" />
-            <span>Ulasan Komunitas & Forum Pengalaman</span>
+            <span>{t('community_reviews_badge')}</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-sky-300">
-            Ulasan Komunitas Wisata Bogor
+            {t('community_reviews_title')}
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Bagikan cerita seru, tips kuliner, foto kenangan, dan ulasan jujur kamu tentang situs heritage dan destinasi wisata Kota Bogor kepada sesama penjelajah.
+            {t('community_reviews_desc')}
           </p>
         </div>
       </div>
@@ -94,31 +98,34 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
           <div className="flex items-center space-x-2 border-b border-white/10 pb-3">
             <Sparkles className="w-5 h-5 text-sky-400" />
             <h3 className="font-extrabold text-base text-white">
-              Tulis Ulasan Wisata Kamu
+              {t('write_review_title')}
             </h3>
           </div>
 
           <form onSubmit={handleSubmitReview} className="space-y-3 text-xs">
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                Pilih Lokasi Wisata / Culinary:
+                {t('select_place_label')}:
               </label>
               <select
                 value={selectedPlaceId}
                 onChange={(e) => setSelectedPlaceId(e.target.value)}
                 className="w-full bg-slate-900/60 border border-white/10 rounded-2xl p-2.5 text-white font-bold focus:outline-none focus:border-sky-400 backdrop-blur-md"
               >
-                {HERITAGE_LOCATIONS.map((loc) => (
-                  <option key={loc.id} value={loc.id} className="bg-slate-900 text-white">
-                    {loc.name}
-                  </option>
-                ))}
+                {HERITAGE_LOCATIONS.map((loc) => {
+                  const localized = getLocalizedHeritage(loc);
+                  return (
+                    <option key={loc.id} value={loc.id} className="bg-slate-900 text-white">
+                      {localized.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                Bintang Rating Kamu:
+                {t('your_rating_label')}:
               </label>
               <div className="flex space-x-1.5">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -142,12 +149,12 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
 
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                Cerita / Ulasan Pengalaman:
+                {t('review_story_label')}:
               </label>
               <textarea
                 rows={4}
                 required
-                placeholder="Bagikan kesan, rekomendasi waktu kunjungan, atau tips kuliner khas yang kamu temukan..."
+                placeholder={lang === 'en' ? 'Share your impressions, best visit time, or tips you found...' : 'Bagikan kesan, rekomendasi waktu kunjungan, atau tips kuliner khas yang kamu temukan...'}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 className="w-full bg-slate-900/60 border border-white/10 rounded-2xl p-3 text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 backdrop-blur-md"
@@ -159,7 +166,7 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
               className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition flex items-center justify-center space-x-2 text-xs border border-sky-400/30"
             >
               <Send className="w-4 h-4" />
-              <span>Kirim Ulasan Komunitas</span>
+              <span>{t('submit_review_btn')}</span>
             </button>
           </form>
         </div>
@@ -170,7 +177,7 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
           <div className="flex items-center justify-between bg-slate-900/40 backdrop-blur-2xl p-3.5 rounded-2xl border border-white/10 text-xs shadow-xl">
             <div className="flex items-center space-x-2 text-slate-300 font-semibold">
               <Filter className="w-4 h-4 text-sky-400" />
-              <span>Filter Ulasan Tempat:</span>
+              <span>{t('filter_reviews_label')}:</span>
             </div>
 
             <select
@@ -178,12 +185,15 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
               onChange={(e) => setFilterPlaceId(e.target.value)}
               className="bg-slate-900/60 border border-white/10 rounded-xl px-3 py-1.5 text-white font-bold focus:outline-none focus:border-sky-400 backdrop-blur-md"
             >
-              <option value="all" className="bg-slate-900 text-white">Semua Tempat ({reviews.length})</option>
-              {HERITAGE_LOCATIONS.map((loc) => (
-                <option key={loc.id} value={loc.id} className="bg-slate-900 text-white">
-                  {loc.name}
-                </option>
-              ))}
+              <option value="all" className="bg-slate-900 text-white">{t('all_places')} ({reviews.length})</option>
+              {HERITAGE_LOCATIONS.map((loc) => {
+                const localized = getLocalizedHeritage(loc);
+                return (
+                  <option key={loc.id} value={loc.id} className="bg-slate-900 text-white">
+                    {localized.name}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -191,7 +201,7 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
           <div className="space-y-3">
             {filteredReviews.length === 0 ? (
               <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center text-slate-400 text-xs">
-                Belum ada ulasan untuk tempat ini. Jadilah yang pertama memberikan ulasan!
+                {t('no_reviews_yet')}
               </div>
             ) : (
               filteredReviews.map((rev) => (
@@ -238,7 +248,7 @@ export const ModuleCommunityReviews: React.FC<ModuleCommunityReviewsProps> = ({
                       className="flex items-center space-x-1.5 text-slate-300 hover:text-sky-300 font-semibold bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl border border-white/10 transition backdrop-blur-md"
                     >
                       <ThumbsUp className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Suka ({rev.likes})</span>
+                      <span>{t('like_review')} ({rev.likes})</span>
                     </button>
                   </div>
                 </div>
