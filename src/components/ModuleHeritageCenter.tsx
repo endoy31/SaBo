@@ -268,8 +268,8 @@ export const ModuleHeritageCenter: React.FC = () => {
               <a
                 href="https://www.youtube.com/@bogortempodulu"
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold rounded-2xl text-xs transition shadow-xl shadow-rose-950/40 border border-rose-400/40 flex-shrink-0"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold rounded-2xl text-xs transition shadow-xl shadow-rose-950/40 border border-rose-400/40 flex-shrink-0 cursor-pointer"
               >
                 <Youtube className="w-4 h-4" />
                 <span>{lang === 'en' ? 'Explore Channel @bogortempodulu' : 'Kunjungi Channel YouTube @bogortempodulu'}</span>
@@ -312,8 +312,8 @@ export const ModuleHeritageCenter: React.FC = () => {
                 <a
                   href={selectedVideo.youtubeUrl}
                   target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold rounded-xl text-xs transition border border-rose-500/30 flex-shrink-0"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold rounded-xl text-xs transition border border-rose-500/30 flex-shrink-0 cursor-pointer"
                 >
                   <Youtube className="w-4 h-4 text-rose-400" />
                   <span>{lang === 'en' ? 'Watch on YouTube' : 'Buka di YouTube'}</span>
@@ -437,8 +437,8 @@ export const ModuleHeritageCenter: React.FC = () => {
               <a
                 href="https://www.youtube.com/@bogortempodulu/videos"
                 target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center space-x-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition shadow-lg border border-sky-400/30 flex-shrink-0"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition shadow-lg border border-sky-400/30 flex-shrink-0 cursor-pointer"
               >
                 <span>{lang === 'en' ? 'Open Video Catalog (1000+)' : 'Buka Ribuan Video Arsip'}</span>
                 <ExternalLink className="w-3.5 h-3.5" />

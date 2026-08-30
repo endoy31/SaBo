@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { ModuleMap } from './components/ModuleMap';
+import { ModuleLeaderboard } from './components/ModuleLeaderboard';
 import { ModuleCreatorHub } from './components/ModuleCreatorHub';
 import { ModuleHeritageCenter } from './components/ModuleHeritageCenter';
 import { ModuleTourismPlanner } from './components/ModuleTourismPlanner';
 import { ModuleCommunityReviews } from './components/ModuleCommunityReviews';
 import { QuestModal } from './components/QuestModal';
 import { UserProfileModal } from './components/UserProfileModal';
+import { BadgeUnlockModal } from './components/BadgeUnlockModal';
 import { ProximityAlertBanner } from './components/ProximityAlertBanner';
 import { Footer } from './components/Footer';
 
@@ -17,7 +19,7 @@ import {
   Itinerary,
 } from './types';
 import { HERITAGE_LOCATIONS } from './data/bogorData';
-import { generateAnimatedSvg } from './utils/animatedIllustration';
+import { AVATAR_PRESETS } from './data/avatars';
 import {
   DEFAULT_BOGOR_CENTER,
   UserCoordinates,
@@ -31,6 +33,7 @@ function AppInner() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [selectedQuestLocation, setSelectedQuestLocation] =
     useState<HeritageLocation | null>(null);
+  const [unlockedBadgeModal, setUnlockedBadgeModal] = useState<string | null>(null);
 
   // Theme Mode Preference (Dark / Light Mode)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -63,7 +66,12 @@ function AppInner() {
     const saved = localStorage.getItem('sabo_user_profile');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Guarantee an avatar preset if older svg was used
+        if (!parsed.avatar || parsed.avatar.includes('dicebear')) {
+          parsed.avatar = AVATAR_PRESETS[0].avatarUrl;
+        }
+        return parsed;
       } catch (e) {
         console.error('Failed parsing saved profile', e);
       }
@@ -71,10 +79,10 @@ function AppInner() {
     return {
       email: 'rafi.explorer@bogor.sch.id',
       username: 'Rafi The Explorer',
-      avatar: generateAnimatedSvg('Rafi The Explorer', 'avatar'),
+      avatar: AVATAR_PRESETS[0].avatarUrl,
       address: 'Bogor Timur, Kota Bogor',
       schoolOrInst: 'SMAN 1 Kota Bogor (Kelas XI)',
-      xp: 450,
+      xp: 650,
       level: 3,
       badges: ['Penjelajah Pajajaran', 'Botani Master'],
       completedQuests: ['kebun_raya_bogor'],
@@ -99,7 +107,7 @@ function AppInner() {
         placeName: 'Kebun Raya Bogor',
         userEmail: 'dimas@gmail.com',
         userName: 'Dimas Weekend Explorer',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dimas',
+        userAvatar: AVATAR_PRESETS[1].avatarUrl,
         rating: 5,
         comment:
           'Sangat asri! Pohon kelapa sawit tertua di Asia Tenggara masih gagah berdiri. Narasi Audio Guide SaBo juga sangat membantu paham sejarah Samida buatan Prabu Siliwangi!',
@@ -112,7 +120,7 @@ function AppInner() {
         placeName: 'Istana Bogor (Buitenzorg Palace)',
         userEmail: 'maya@art.id',
         userName: 'Maya Crafts',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maya',
+        userAvatar: AVATAR_PRESETS[7].avatarUrl,
         rating: 5,
         comment:
           'Pemandangan ratusan rusa totol keturunan Nepal yang berkejaran di pelataran rumput Istana selalu menginspirasi karya kriya batik saya.',
@@ -125,7 +133,7 @@ function AppInner() {
         placeName: 'Soto Mie Bogor',
         userEmail: 'siti@sch.id',
         userName: 'Siti Pelajar Bogor',
-        userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Siti',
+        userAvatar: AVATAR_PRESETS[2].avatarUrl,
         rating: 5,
         comment:
           'Risoles isi bihunnya renyah banget saat disiram kuah soto mie panas! Kuliner wajib tiap sabtu usai keliling museum!',
@@ -169,7 +177,7 @@ function AppInner() {
   const nearbyPlaces = findNearbyPlaces(userPos, 500);
   const activeNearby = nearbyPlaces.find((p) => p.id !== dismissedNearbyId);
 
-  // Complete Quest Handler
+  // Complete Quest Handler with XP & Badge Unlock Celebration
   const handleCompleteQuest = (
     locationId: string,
     xpEarned: number,
@@ -184,12 +192,16 @@ function AppInner() {
     const newLevel = Math.floor(newXp / 250) + 1;
 
     let newBadges = [...user.badges];
+    let justUnlockedBadge: string | null = null;
+
     if (badgeName && !newBadges.includes(badgeName)) {
       newBadges.push(badgeName);
+      justUnlockedBadge = badgeName;
     }
 
     if (newQuests.length >= 5 && !newBadges.includes('Saba Bogor Hero')) {
       newBadges.push('Saba Bogor Hero');
+      if (!justUnlockedBadge) justUnlockedBadge = 'Saba Bogor Hero';
     }
 
     setUser({
@@ -199,6 +211,10 @@ function AppInner() {
       completedQuests: newQuests,
       badges: newBadges,
     });
+
+    if (justUnlockedBadge) {
+      setUnlockedBadgeModal(justUnlockedBadge);
+    }
   };
 
   // Simple Email Login Handler
@@ -208,7 +224,7 @@ function AppInner() {
       ...user,
       email,
       username: usernameFromEmail || 'Penjelajah Bogor',
-      avatar: generateAnimatedSvg(usernameFromEmail || 'Penjelajah Bogor', 'avatar'),
+      avatar: user.avatar || AVATAR_PRESETS[0].avatarUrl,
     });
     alert(
       lang === 'en'
@@ -245,16 +261,28 @@ function AppInner() {
     <div
       className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-300 ${
         theme === 'light'
-          ? 'bg-[#f7f4eb] text-[#0d2e22] light'
-          : 'bg-[#071a12] text-[#f7f4eb] dark'
+          ? 'bg-[#F7F1E3] text-[#0F2A21] light'
+          : 'bg-[#0F2A21] text-[#F7F1E3] dark'
       }`}
     >
       {/* Frosted Glass Ambient Light Background Glows */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl ${theme === 'light' ? 'bg-emerald-600/10' : 'bg-emerald-600/15'}`} />
-        <div className={`absolute top-1/3 -right-20 w-96 h-96 rounded-full blur-3xl ${theme === 'light' ? 'bg-amber-600/10' : 'bg-amber-700/15'}`} />
-        <div className={`absolute -bottom-20 left-1/3 w-[500px] h-[500px] rounded-full blur-3xl ${theme === 'light' ? 'bg-emerald-700/10' : 'bg-emerald-800/20'}`} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.12),transparent_70%)]" />
+        <div
+          className={`absolute -top-40 -left-40 w-96 h-96 rounded-full blur-3xl ${
+            theme === 'light' ? 'bg-[#1B4D3E]/10' : 'bg-[#1B4D3E]/20'
+          }`}
+        />
+        <div
+          className={`absolute top-1/3 -right-20 w-96 h-96 rounded-full blur-3xl ${
+            theme === 'light' ? 'bg-[#C17817]/10' : 'bg-[#C17817]/15'
+          }`}
+        />
+        <div
+          className={`absolute -bottom-20 left-1/3 w-[500px] h-[500px] rounded-full blur-3xl ${
+            theme === 'light' ? 'bg-[#3F7D64]/10' : 'bg-[#1B4D3E]/25'
+          }`}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(63,125,100,0.12),transparent_70%)]" />
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
@@ -294,6 +322,13 @@ function AppInner() {
               setUserPos={setUserPos}
               isOffline={isOffline}
               isGpsActive={isGpsActive}
+            />
+          )}
+
+          {activeTab === 'leaderboard' && (
+            <ModuleLeaderboard
+              user={user}
+              onNavigateToMap={() => setActiveTab('map')}
             />
           )}
 
@@ -339,6 +374,14 @@ function AppInner() {
           />
         )}
 
+        {/* Badge Unlock Celebration Modal with Confetti */}
+        {unlockedBadgeModal && (
+          <BadgeUnlockModal
+            badgeName={unlockedBadgeModal}
+            onClose={() => setUnlockedBadgeModal(null)}
+          />
+        )}
+
         {/* Footer */}
         <Footer />
       </div>
@@ -353,4 +396,3 @@ export default function App() {
     </LanguageProvider>
   );
 }
-

@@ -585,6 +585,310 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     en: 'Start Quest & Audio',
   },
 
+  // Deep Heritage Alias Keys (Bugfix P0)
+  heritage_archive_title: {
+    id: 'Arsip & Narasi Sejarah Kota Bogor',
+    en: 'Bogor Heritage Archives & Historical Narratives',
+  },
+  heritage_archive_subtitle: {
+    id: 'Eksplorasi dokumen sejarah autentik, koleksi video dokumenter Dinas Arsip Kota Bogor (@bogortempodulu), dan profil para tokoh pahlawan bangsa yang membentuk identitas Kota Hujan.',
+    en: 'Explore authentic historical records, vintage documentary archives (@bogortempodulu), and profiles of historical leaders who shaped the City of Rain.',
+  },
+  tab_history_essay: {
+    id: 'Sejarah Lengkap Bogor',
+    en: 'Complete History of Bogor',
+  },
+  tab_video_archive: {
+    id: 'Video Arsip Bogor Tempo Dulu',
+    en: 'Vintage Video Archives',
+  },
+  tab_historical_figures: {
+    id: 'Profil Tokoh Sejarah',
+    en: 'Historical Figures',
+  },
+
+  // Tourism Planner Alias Keys (Bugfix P0)
+  travel_planner_badge: {
+    id: 'Perencana Wisata & Rekomendasi Kuliner Bogor',
+    en: 'Bogor Tourism Planner & Culinary Guide',
+  },
+  travel_planner_title: {
+    id: 'Rencanakan Liburan & Wisata Kuliner Bogor',
+    en: 'Plan Your Bogor Vacation & Culinary Tour',
+  },
+  travel_planner_desc: {
+    id: 'Buat jadwal perjalanan mandiri (itinerary), hitung estimasi biaya, telusuri kuliner legendaris dan restoran modern, serta jelajahi hotel & penerbangan via Google Travel.',
+    en: 'Create custom itineraries, estimate travel budgets, discover legendary dishes & modern dining, and explore hotels & flights via Google Travel.',
+  },
+  filter_kuliner: {
+    id: 'Kuliner Legendaris',
+    en: 'Legendary Culinary',
+  },
+  filter_restoran: {
+    id: 'Restoran Modern',
+    en: 'Modern Dining',
+  },
+  filter_wisata: {
+    id: 'Destinasi Wisata',
+    en: 'Tourist Attractions',
+  },
+  filter_umkm: {
+    id: 'Sentra UMKM',
+    en: 'UMKM Centers',
+  },
+  filter_instansi: {
+    id: 'Instansi & Museum',
+    en: 'Heritage Institutions',
+  },
+  itinerary_title_label: {
+    id: 'Nama Itinerary Perjalanan:',
+    en: 'Travel Itinerary Name:',
+  },
+  no_places_added: {
+    id: 'Belum ada destinasi yang ditambahkan. Klik "+ Tambah ke Itinerary" pada kartu di samping.',
+    en: 'No destinations added yet. Click "+ Add to Itinerary" on any card beside.',
+  },
+  save_itinerary_btn: {
+    id: 'Simpan Itinerary Saya',
+    en: 'Save My Itinerary',
+  },
+  my_itinerary: {
+    id: 'Rencana Perjalanan Saya',
+    en: 'My Travel Itinerary',
+  },
+  est_total_cost: {
+    id: 'Estimasi Total Anggaran',
+    en: 'Total Estimated Budget',
+  },
+
+  // Community Reviews Alias Keys (Bugfix P0)
+  community_reviews_badge: {
+    id: 'Ulasan Komunitas & Forum Pengalaman',
+    en: 'Community Reviews & Experience Forum',
+  },
+  community_reviews_title: {
+    id: 'Ulasan Komunitas Wisata Bogor',
+    en: 'Bogor Tourism Community Reviews',
+  },
+  community_reviews_desc: {
+    id: 'Bagikan cerita seru, tips kuliner, foto kenangan, dan ulasan jujur kamu tentang situs heritage dan destinasi wisata Kota Bogor kepada sesama penjelajah.',
+    en: 'Share your travel stories, food tips, memories, and honest reviews about heritage sites and attractions in Bogor with fellow explorers.',
+  },
+  write_review_title: {
+    id: 'Tulis Ulasan Wisata Kamu',
+    en: 'Write Your Travel Review',
+  },
+  your_rating_label: {
+    id: 'Rating Pengalaman',
+    en: 'Experience Rating',
+  },
+  review_story_label: {
+    id: 'Cerita & Kesan Kunjungan',
+    en: 'Visit Story & Impressions',
+  },
+  submit_review_btn: {
+    id: 'Kirim Ulasan Komunitas',
+    en: 'Submit Community Review',
+  },
+  filter_reviews_label: {
+    id: 'Filter Destinasi',
+    en: 'Filter Destination',
+  },
+  all_places: {
+    id: 'Semua Destinasi',
+    en: 'All Destinations',
+  },
+  no_reviews_yet: {
+    id: 'Belum ada ulasan untuk destinasi ini. Jadilah penjelajah pertama yang mengulas!',
+    en: 'No reviews for this destination yet. Be the first explorer to review!',
+  },
+  like_review: {
+    id: 'Bermanfaat',
+    en: 'Helpful',
+  },
+
+  // User Profile & Gamification Alias Keys (Bugfix P0)
+  user_profile_title: {
+    id: 'Profil Pengguna SaBo',
+    en: 'SaBo User Profile',
+  },
+  simple_login_email: {
+    id: 'Masuk Sederhana dengan Email',
+    en: 'Simple Email Sign-In',
+  },
+  login_email_desc: {
+    id: 'Gunakan email kamu untuk menyimpan atau memuat progress XP, level, dan lencana petualangan.',
+    en: 'Use your email to save and restore your XP progress, level rank, and adventure badges.',
+  },
+  login_button: {
+    id: 'Masuk / Muat Akun',
+    en: 'Sign In / Load Account',
+  },
+  profile_info_header: {
+    id: 'Informasi Penjelajah',
+    en: 'Explorer Information',
+  },
+  PROFILE_INFO_HEADER: {
+    id: 'Informasi Penjelajah',
+    en: 'Explorer Information',
+  },
+  edit_profile_btn: {
+    id: 'Edit Profil',
+    en: 'Edit Profile',
+  },
+  save_changes_btn: {
+    id: 'Simpan Perubahan',
+    en: 'Save Changes',
+  },
+  unlocked_badges: {
+    id: 'Lencana Penghargaan Terbuka',
+    en: 'Earned Badges',
+  },
+  UNLOCKED_BADGES: {
+    id: 'Lencana Penghargaan Terbuka',
+    en: 'Earned Badges',
+  },
+  next_level_progress: {
+    id: 'Progress Menuju Level Berikutnya',
+    en: 'Progress to Next Level',
+  },
+  passwordless: {
+    id: 'Tanpa Kata Sandi',
+    en: 'Passwordless',
+  },
+  saved_itineraries: {
+    id: 'Itinerary Tersimpan',
+    en: 'Saved Itineraries',
+  },
+  choose_avatar_btn: {
+    id: 'Ganti Avatar Maskot',
+    en: 'Change Mascot Avatar',
+  },
+  avatar_picker_title: {
+    id: 'Pilih Avatar Karakter SaBo',
+    en: 'Choose Your SaBo Character Avatar',
+  },
+  avatar_picker_desc: {
+    id: 'Koleksi 10 avatar bertema maskot rusa totol, ksatria Pajajaran, ahli botani, dan ikat kepala batik khas Bogor.',
+    en: 'Collection of 10 avatars featuring the spotted deer mascot, Pajajaran knights, botanists, and traditional Bogor batik headbands.',
+  },
+  avatar_locked_level: {
+    id: 'Terkunci (Perlu Level {level})',
+    en: 'Locked (Requires Level {level})',
+  },
+  use_this_avatar: {
+    id: 'Gunakan Avatar Ini',
+    en: 'Use This Avatar',
+  },
+
+  // Leaderboard Keys (New Feature §5)
+  nav_leaderboard: {
+    id: 'Papan Peringkat Real-Time',
+    en: 'Real-Time Leaderboard',
+  },
+  leaderboard_title: {
+    id: 'Papan Peringkat Penjelajah SaBo 2026',
+    en: 'SaBo 2026 Explorer Leaderboard',
+  },
+  leaderboard_subtitle: {
+    id: 'Panggung kompetisi real-time antar sekolah (SMA/SMK), kecamatan, dan kreator lokal Kota Bogor dalam menuntaskan misi budaya & UMKM.',
+    en: 'Real-time competitive ranking across high schools, districts, and creators of Bogor in exploring cultural heritage and local businesses.',
+  },
+  leaderboard_live_pulse: {
+    id: 'LIVE REAL-TIME',
+    en: 'LIVE REAL-TIME',
+  },
+  filter_all_rank: {
+    id: 'Semua Kategori',
+    en: 'All Categories',
+  },
+  filter_schools: {
+    id: 'Antar Sekolah (SMA/SMK)',
+    en: 'Inter-School (High School)',
+  },
+  filter_districts: {
+    id: 'Antar Kecamatan',
+    en: 'Inter-District',
+  },
+  filter_creators: {
+    id: 'Kreator & Komunitas',
+    en: 'Creators & Communities',
+  },
+  your_rank_badge: {
+    id: 'Peringkat Kamu',
+    en: 'Your Live Rank',
+  },
+  podium_1st: {
+    id: 'Juara 1 Pasundan',
+    en: '1st Champion',
+  },
+  podium_2nd: {
+    id: 'Peringkat 2',
+    en: '2nd Place',
+  },
+  podium_3rd: {
+    id: 'Peringkat 3',
+    en: '3rd Place',
+  },
+
+  // Reward Animations & Modal Keys (New Feature §6)
+  badge_unlocked_modal_title: {
+    id: 'Lencana Baru Terbuka!',
+    en: 'New Badge Unlocked!',
+  },
+  badge_unlocked_modal_desc: {
+    id: 'Selamat! Kamu telah membuktikan wawasan dan kecintaanmu dalam menjelajahi warisan budaya Kota Bogor.',
+    en: 'Congratulations! You have proven your knowledge and passion for exploring Bogor cultural heritage.',
+  },
+  continue_exploring: {
+    id: 'Lanjutkan Eksplorasi',
+    en: 'Continue Exploration',
+  },
+  history_explanation: {
+    id: 'Penjelasan Sejarah',
+    en: 'Historical Explanation',
+  },
+  next_question: {
+    id: 'Pertanyaan Berikutnya',
+    en: 'Next Question',
+  },
+  view_results: {
+    id: 'Lihat Hasil Akhir',
+    en: 'View Results',
+  },
+  quest_cleared: {
+    id: 'Selamat! Quest Berhasil Diselesaikan!',
+    en: 'Congratulations! Quest Cleared!',
+  },
+  completed_trivia_for: {
+    id: 'Kamu telah menyelesaikan quest trivia sejarah untuk',
+    en: 'You have completed the history trivia quest for',
+  },
+  final_score: {
+    id: 'Skor Akhir Kamu',
+    en: 'Your Final Score',
+  },
+  bonus_xp: {
+    id: 'XP Diperoleh',
+    en: 'XP Earned',
+  },
+  key_facts: {
+    id: 'Fakta Menarik Lokasi Ini',
+    en: 'Key Historic Facts',
+  },
+  share_result: {
+    id: 'Bagikan Hasil',
+    en: 'Share Result',
+  },
+  repeat: {
+    id: 'Ulangi Kuis',
+    en: 'Retry Quiz',
+  },
+  close_claim: {
+    id: 'Klaim Hadiah & Selesai',
+    en: 'Claim Reward & Finish',
+  },
+
   // Footer
   footer_desc: {
     id: 'Aplikasi Gamifikasi Edukasi Warisan Budaya, Peta Interaktif, & Hub Kreator Lokal Kota Bogor.',
@@ -871,9 +1175,29 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [lang]);
 
   const t = (key: string): string => {
-    const entry = UI_TRANSLATIONS[key];
-    if (!entry) return key;
-    return entry[lang] || entry['id'] || key;
+    if (!key) return '';
+    // 1. Direct match
+    let entry = UI_TRANSLATIONS[key];
+    // 2. Lowercase match
+    if (!entry) {
+      entry = UI_TRANSLATIONS[key.toLowerCase()];
+    }
+    // 3. Normalized snake_case match
+    if (!entry) {
+      const normalized = key.toLowerCase().replace(/[\s-]+/g, '_');
+      entry = UI_TRANSLATIONS[normalized];
+    }
+    if (entry) {
+      return entry[lang] || entry['id'] || entry['en'] || key;
+    }
+    // 4. Safe humanized fallback if completely missing (never show raw_snake_case_key)
+    if (key.includes('_')) {
+      return key
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+    return key;
   };
 
   const getLocalizedHeritage = (item: HeritageLocation): HeritageLocation => {

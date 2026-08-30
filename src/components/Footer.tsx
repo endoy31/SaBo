@@ -17,10 +17,10 @@ export const Footer: React.FC = () => {
 
           <div className="flex flex-wrap gap-3">
             <a
-              href="https://www.youtube/@bogortempodulu"
+              href="https://www.youtube.com/@bogortempodulu"
               target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-1.5 bg-rose-900/30 light:bg-rose-800/10 hover:bg-rose-900/40 text-rose-200 light:text-rose-900 rounded-2xl border border-rose-700/40 light:border-rose-600/30 flex items-center space-x-1.5 transition font-semibold backdrop-blur-md"
+              rel="noopener noreferrer"
+              className="px-3.5 py-1.5 bg-rose-900/30 light:bg-rose-800/10 hover:bg-rose-900/40 text-rose-200 light:text-rose-900 rounded-2xl border border-rose-700/40 light:border-rose-600/30 flex items-center space-x-1.5 transition font-semibold backdrop-blur-md cursor-pointer"
             >
               <Youtube className="w-4 h-4 text-rose-400 light:text-rose-700" />
               <span>Arsip @bogortempodulu</span>

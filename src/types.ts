@@ -207,3 +207,31 @@ export interface UserProfile {
   savedItineraries: Itinerary[];
   joinDate: string;
 }
+
+export interface AvatarOption {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+  avatarUrl: string;
+  minLevel: number;
+  theme: string;
+  accessory: string;
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  rank: number;
+  username: string;
+  avatar: string;
+  schoolOrInst: string;
+  district: string;
+  category: 'sekolah' | 'kecamatan' | 'kreator' | 'umum';
+  xp: number;
+  level: number;
+  badgeCount: number;
+  questsCompleted: number;
+  isCurrentUser?: boolean;
+  recentActivity?: string;
+}
+
