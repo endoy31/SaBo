@@ -18,6 +18,14 @@ import {
   Coffee,
   ShoppingBag,
   Info,
+  Layers,
+  Route,
+  Landmark,
+  UtensilsCrossed,
+  Palette,
+  Maximize2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { HERITAGE_LOCATIONS, CREATORS } from '../data/bogorData';
 import { BOGOR_UMKM_DATABASE } from '../data/umkmData';
@@ -27,9 +35,241 @@ import { useLanguage } from '../utils/translations';
 
 // Combined map item union type
 export type MapDisplayItem =
-  | { type: 'heritage'; data: HeritageLocation }
-  | { type: 'umkm'; data: UMKMItem }
-  | { type: 'creator'; data: Creator & { coordinates: { lat: number; lng: number } } };
+  | { type: 'heritage'; data: HeritageLocation; thematicCategory: 'history' | 'culinary' | 'botany' }
+  | { type: 'umkm'; data: UMKMItem; thematicCategory: 'history' | 'culinary' | 'creative' }
+  | { type: 'creator'; data: Creator & { coordinates: { lat: number; lng: number } }; thematicCategory: 'creative' };
+
+export type ThematicLayerType = 'all' | 'history' | 'culinary' | 'creative';
+
+export type BasemapTileId = 'osm' | 'voyager' | 'dark' | 'topo';
+
+interface BasemapConfig {
+  id: BasemapTileId;
+  name: string;
+  nameEn: string;
+  url: string;
+  attribution: string;
+}
+
+const BASEMAP_CONFIGS: BasemapConfig[] = [
+  {
+    id: 'osm',
+    name: 'OpenStreetMap (Publik)',
+    nameEn: 'OpenStreetMap (Public)',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+  {
+    id: 'voyager',
+    name: 'Carto Voyager (Cerah)',
+    nameEn: 'Carto Voyager (Clean)',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors & CartoDB',
+  },
+  {
+    id: 'dark',
+    name: 'Carto Dark (Elegan)',
+    nameEn: 'Carto Dark (Night)',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors & CartoDB',
+  },
+  {
+    id: 'topo',
+    name: 'OpenTopo (Topografi)',
+    nameEn: 'OpenTopo (Terrain)',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap & OpenTopoMap',
+  },
+];
+
+interface ThematicRouteWaypoint {
+  name: string;
+  nameEn: string;
+  desc: string;
+  lat: number;
+  lng: number;
+}
+
+interface ThematicRouteDefinition {
+  title: string;
+  titleEn: string;
+  subtitle: string;
+  subtitleEn: string;
+  badge: string;
+  badgeEn: string;
+  color: string;
+  accentBg: string;
+  borderAccent: string;
+  waypoints: ThematicRouteWaypoint[];
+}
+
+const THEMATIC_ROUTE_DEFINITIONS: Record<'history' | 'culinary' | 'creative', ThematicRouteDefinition> = {
+  history: {
+    title: 'Jalur Wisata Cagar Budaya & Sejarah Bogor',
+    titleEn: 'Bogor Historic Heritage Walking Trail',
+    subtitle: 'Napak tilas dari Istana Buitenzorg (1744), Kebun Raya (1817), Museum Zoologi (1894), hingga Prasasti Batutulis (1533 M).',
+    subtitleEn: 'Heritage journey through Buitenzorg Palace (1744), Botanical Gardens (1817), Zoology Museum (1894), to Batutulis Inscription (1533 CE).',
+    badge: '14+ Cagar Budaya & Museum',
+    badgeEn: '14+ Heritage Sites & Museums',
+    color: '#3b82f6',
+    accentBg: 'rgba(59, 130, 246, 0.15)',
+    borderAccent: '#3b82f6',
+    waypoints: [
+      {
+        name: 'Istana Bogor (Buitenzorg 1744)',
+        nameEn: 'Bogor Palace (Buitenzorg 1744)',
+        desc: 'Kediaman Presiden RI & Istana Bersejarah Van Imhoff',
+        lat: -6.5976,
+        lng: 106.7975,
+      },
+      {
+        name: 'Kebun Raya Bogor (1817)',
+        nameEn: 'Bogor Botanical Gardens (1817)',
+        desc: 'Pusat Botani Tertua Se-Asia Tenggara & Taman Samida',
+        lat: -6.5971,
+        lng: 106.806,
+      },
+      {
+        name: 'Museum Zoologi (1894)',
+        nameEn: 'Zoology Museum (1894)',
+        desc: 'Koleksi Fauna Nusantara & Kerangka Paus Biru 22m',
+        lat: -6.6028,
+        lng: 106.799,
+      },
+      {
+        name: 'Gereja Zebaoth / Gereja Ayam (1838)',
+        nameEn: 'Zebaoth Church (1838)',
+        desc: 'Gereja Kolonial Tertua di Dekat Istana',
+        lat: -6.598,
+        lng: 106.7935,
+      },
+      {
+        name: 'Monumen Kujang (1982)',
+        nameEn: 'Kujang Monument (1982)',
+        desc: 'Simbol Kedaulatan & Filosofi Pakuan Pajajaran',
+        lat: -6.6013,
+        lng: 106.8055,
+      },
+      {
+        name: 'Prasasti Batutulis (1533 M)',
+        nameEn: 'Batutulis Inscription (1533 CE)',
+        desc: 'Inskripsi Kerajaan Sunda Pajajaran Prabu Surawisesa',
+        lat: -6.6133,
+        lng: 106.8083,
+      },
+    ],
+  },
+  culinary: {
+    title: 'Koridor Kuliner Legendaris Suryakencana & Pajajaran',
+    titleEn: 'Suryakencana & Pajajaran Legendary Culinary Corridor',
+    subtitle: 'Sensasi rasa otentik turun-temurun: Martabak Encek 1972, Kopi Bah Sipit 1925, Roti Unyil Venus, hingga Bogor Permai.',
+    subtitleEn: 'Authentic generational tastes: 1972 Encek charcoal martabak, 1925 Bah Sipit coffee, Roti Unyil Venus, & Bogor Permai.',
+    badge: '30+ Kuliner Ikonik & Rasa Asli',
+    badgeEn: '30+ Iconic Culinary Spots',
+    color: '#ef4444',
+    accentBg: 'rgba(239, 68, 68, 0.15)',
+    borderAccent: '#ef4444',
+    waypoints: [
+      {
+        name: 'Martabak Bangka Encek (1972)',
+        nameEn: 'Encek Charcoal Martabak (1972)',
+        desc: 'Dimasak dengan Arang Tradisional, Resep Sejak 1972',
+        lat: -6.6045,
+        lng: 106.8012,
+      },
+      {
+        name: 'Martabak Bangka AFO Suryakencana',
+        nameEn: 'AFO Martabak Suryakencana',
+        desc: 'Pusat Jajanan Pecinan Suryakencana Bogor',
+        lat: -6.6052,
+        lng: 106.8018,
+      },
+      {
+        name: 'Kopi Bah Sipit Cap Kacamata (1925)',
+        nameEn: 'Bah Sipit Coffee (1925)',
+        desc: 'Kopi Tertua di Bogor Berusia 100 Tahun di Empang',
+        lat: -6.6085,
+        lng: 106.7932,
+      },
+      {
+        name: 'Roti Unyil Venus Sukasari',
+        nameEn: 'Roti Unyil Venus Sukasari',
+        desc: 'Ikon Oleh-Oleh Roti Mini Terpopuler Sejak Dulu',
+        lat: -6.6195,
+        lng: 106.8165,
+      },
+      {
+        name: 'Michelle Bakery Baranangsiang',
+        nameEn: 'Michelle Bakery Baranangsiang',
+        desc: 'Bakery Legendaris & Jajanan Pasar Tradisional',
+        lat: -6.608,
+        lng: 106.8118,
+      },
+      {
+        name: 'Bogor Permai Bakery Sudirman',
+        nameEn: 'Bogor Permai Bakery Sudirman',
+        desc: 'Resto & Bakery Klasik Ikon Kota Sejak Puluhan Tahun',
+        lat: -6.5885,
+        lng: 106.7935,
+      },
+    ],
+  },
+  creative: {
+    title: 'Jelajah Ruang Kreatif, Studio Kriya & Komunitas Seni',
+    titleEn: 'Creative Hubs, Craft Studios & Art Collective Trail',
+    subtitle: 'Pusat kolaborasi perupa Bogor Sketchers, atelier kriya, studio ilustrasi, hingga sanggar batik kearifan lokal.',
+    subtitleEn: 'Urban sketching community, craft ateliers, illustration studios, and local heritage batik workshops.',
+    badge: '12+ Studio Kreatif & Sanggar',
+    badgeEn: '12+ Creative Studios & Hubs',
+    color: '#06b6d4',
+    accentBg: 'rgba(6, 182, 212, 0.15)',
+    borderAccent: '#06b6d4',
+    waypoints: [
+      {
+        name: 'Bogor Sketchers Creative Hub',
+        nameEn: 'Bogor Sketchers Creative Hub',
+        desc: 'Komunitas Sketsa Arsitektur & Budaya Kota Bogor',
+        lat: -6.6025,
+        lng: 106.8015,
+      },
+      {
+        name: 'Maya Crafts Studio',
+        nameEn: 'Maya Crafts Studio',
+        desc: 'Atelier Kriya Daur Ulang & Anyaman Serat Alami',
+        lat: -6.608,
+        lng: 106.8125,
+      },
+      {
+        name: 'Dika Stone & Wood Sculptures',
+        nameEn: 'Dika Stone & Wood Sculptures',
+        desc: 'Pahatan Karakter Sunda & Replika Megalitikum',
+        lat: -6.6133,
+        lng: 106.8083,
+      },
+      {
+        name: 'Rian Illustration Atelier',
+        nameEn: 'Rian Illustration Atelier',
+        desc: 'Ilustrasi Botani & Cerita Rakyat Nusantara',
+        lat: -6.5925,
+        lng: 106.7905,
+      },
+      {
+        name: 'Batik Bogor Tradisiku Sentra',
+        nameEn: 'Batik Bogor Tradisiku Center',
+        desc: 'Pionir Motif Hujan, Kujang & Rusa Kebun Raya',
+        lat: -6.5785,
+        lng: 106.7924,
+      },
+      {
+        name: 'Batikayudewi Workshop & Ceramic',
+        nameEn: 'Batikayudewi Workshop & Ceramic',
+        desc: 'Kelas Workshop Batik Tulis & Keramik Interaktif',
+        lat: -6.554,
+        lng: 106.8155,
+      },
+    ],
+  },
+};
 
 interface ModuleMapProps {
   onSelectQuestLocation: (loc: HeritageLocation) => void;
@@ -51,20 +291,34 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   const { lang, t, getLocalizedHeritage } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
+  const routeGroupRef = useRef<L.LayerGroup | null>(null);
   const playerMarkerRef = useRef<L.Marker | null>(null);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedItem, setSelectedItem] = useState<MapDisplayItem>({
-    type: 'heritage',
-    data: getLocalizedHeritage(HERITAGE_LOCATIONS[0]),
+  // Thematic Map States
+  const [thematicLayer, setThematicLayer] = useState<ThematicLayerType>('history');
+  const [showThematicRoute, setShowThematicRoute] = useState<boolean>(true);
+  const [activeBasemap, setActiveBasemap] = useState<BasemapTileId>(isOffline ? 'osm' : 'osm');
+  const [isBasemapMenuOpen, setIsBasemapMenuOpen] = useState<boolean>(false);
+  const [showThematicGuide, setShowThematicGuide] = useState<boolean>(true);
+
+  // Multi-layer toggle states (allows combining layers)
+  const [enabledThematicLayers, setEnabledThematicLayers] = useState<Record<'history' | 'culinary' | 'creative', boolean>>({
+    history: true,
+    culinary: false,
+    creative: false,
   });
+
+  // Standard category filter
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedItem, setSelectedItem] = useState<MapDisplayItem | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Prepare unified list of map items
+  // Fixed coordinates for creators
   const creatorCoordinatesMap: Record<string, { lat: number; lng: number }> = {
     bogor_sketchers: { lat: -6.6025, lng: 106.8015 },
-    maya_crafts: { lat: -6.6080, lng: 106.8125 },
+    maya_crafts: { lat: -6.608, lng: 106.8125 },
     rian_illustration: { lat: -6.5925, lng: 106.7905 },
     dika_stone: { lat: -6.6133, lng: 106.8083 },
     batik_tradisiku: { lat: -6.5785, lng: 106.7924 },
@@ -74,13 +328,44 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
     getLocalizedHeritage(h)
   );
 
+  // Prepare unified list with explicit thematic category categorization
   const allMapItems: MapDisplayItem[] = [
-    ...localizedHeritageLocations.map(
-      (h) => ({ type: 'heritage', data: h } as MapDisplayItem)
-    ),
-    ...BOGOR_UMKM_DATABASE.map(
-      (u) => ({ type: 'umkm', data: u } as MapDisplayItem)
-    ),
+    ...localizedHeritageLocations.map((h) => {
+      let cat: 'history' | 'culinary' | 'botany' = 'history';
+      if (h.category === 'kuliner') cat = 'culinary';
+      else if (h.category === 'botani') cat = 'botany';
+      return {
+        type: 'heritage',
+        data: h,
+        thematicCategory: cat,
+      } as MapDisplayItem;
+    }),
+    ...BOGOR_UMKM_DATABASE.map((u) => {
+      let cat: 'history' | 'culinary' | 'creative' = 'culinary';
+      const notesLower = u.notes.toLowerCase();
+      const catLower = u.category.toLowerCase();
+      if (
+        catLower.includes('legendaris') ||
+        notesLower.includes('sejak') ||
+        notesLower.includes('tertua') ||
+        notesLower.includes('klasik') ||
+        u.number === 4 ||
+        u.number === 23
+      ) {
+        cat = 'history';
+      } else if (
+        u.generalCategory === 'kreatif' ||
+        u.generalCategory === 'kerajinan' ||
+        u.generalCategory === 'fashion'
+      ) {
+        cat = 'creative';
+      }
+      return {
+        type: 'umkm',
+        data: u,
+        thematicCategory: cat,
+      } as MapDisplayItem;
+    }),
     ...CREATORS.map((c) => ({
       type: 'creator',
       data: {
@@ -90,43 +375,94 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
           lng: 106.806 + (Math.random() - 0.5) * 0.03,
         },
       },
+      thematicCategory: 'creative',
     } as MapDisplayItem)),
   ];
 
-  // Filter map items
-  const filteredMapItems = allMapItems.filter((item) => {
-    let categoryMatch = false;
+  // Set initial selected item on mount
+  useEffect(() => {
+    if (!selectedItem && allMapItems.length > 0) {
+      setSelectedItem(allMapItems[0]);
+    }
+  }, []);
 
-    if (selectedCategory === 'all') {
-      categoryMatch = true;
-    } else if (selectedCategory === 'sejarah') {
-      categoryMatch = item.type === 'heritage' && item.data.category === 'sejarah';
-    } else if (selectedCategory === 'botani') {
-      categoryMatch = item.type === 'heritage' && item.data.category === 'botani';
-    } else if (selectedCategory === 'kopi') {
-      categoryMatch = item.type === 'umkm' && item.data.generalCategory === 'kopi';
-    } else if (selectedCategory === 'kuliner') {
-      categoryMatch =
+  // Filter map items according to selected Thematic Layer and multi-layer toggles
+  const filteredMapItems = allMapItems.filter((item) => {
+    // Thematic Filter Check
+    let thematicMatch = false;
+
+    if (thematicLayer === 'all') {
+      // Check multi-layer checkboxes
+      const matchesHistory = enabledThematicLayers.history && (
+        item.thematicCategory === 'history' ||
+        (item.type === 'heritage' && (item.data.category === 'sejarah' || item.data.category === 'botani'))
+      );
+      const matchesCulinary = enabledThematicLayers.culinary && (
+        item.thematicCategory === 'culinary' ||
+        (item.type === 'umkm' && (item.data.generalCategory === 'kuliner' || item.data.generalCategory === 'bakery' || item.data.generalCategory === 'kopi'))
+      );
+      const matchesCreative = enabledThematicLayers.creative && (
+        item.thematicCategory === 'creative' ||
+        (item.type === 'umkm' && (item.data.generalCategory === 'kerajinan' || item.data.generalCategory === 'fashion' || item.data.generalCategory === 'kreatif'))
+      );
+
+      // If at least one layer is enabled, match those. If none are enabled, show all
+      if (enabledThematicLayers.history || enabledThematicLayers.culinary || enabledThematicLayers.creative) {
+        thematicMatch = Boolean(matchesHistory || matchesCulinary || matchesCreative);
+      } else {
+        thematicMatch = true;
+      }
+    } else if (thematicLayer === 'history') {
+      // Wisata Sejarah: Cagar budaya, museum, istana, prasasti, dan kuliner legendaris bersejarah
+      thematicMatch =
+        (item.type === 'heritage' && (item.data.category === 'sejarah' || item.data.category === 'botani')) ||
+        (item.type === 'umkm' && (item.thematicCategory === 'history' || item.data.notes.toLowerCase().includes('sejak') || item.data.category.toLowerCase().includes('legendaris')));
+    } else if (thematicLayer === 'culinary') {
+      // Kuliner Legendaris: Warisan kuliner, kedai kopi tua, bakery ikonik, jajanan legendaris
+      thematicMatch =
         (item.type === 'heritage' && item.data.category === 'kuliner') ||
-        (item.type === 'umkm' && item.data.generalCategory === 'kuliner');
-    } else if (selectedCategory === 'bakery') {
-      categoryMatch = item.type === 'umkm' && item.data.generalCategory === 'bakery';
-    } else if (selectedCategory === 'kerajinan') {
-      categoryMatch =
-        (item.type === 'umkm' && item.data.generalCategory === 'kerajinan') ||
-        (item.type === 'creator' && item.data.category === 'kriya');
-    } else if (selectedCategory === 'fashion') {
-      categoryMatch = item.type === 'umkm' && item.data.generalCategory === 'fashion';
-    } else if (selectedCategory === 'kreatif') {
-      categoryMatch =
+        (item.type === 'umkm' && (item.data.generalCategory === 'kuliner' || item.data.generalCategory === 'bakery' || item.data.generalCategory === 'kopi'));
+    } else if (thematicLayer === 'creative') {
+      // Ruang Kreatif: Creator hub, studio kriya, galeri batik, co-working & atelier
+      thematicMatch =
         item.type === 'creator' ||
-        (item.type === 'umkm' && item.data.generalCategory === 'kreatif');
-    } else if (selectedCategory === 'top_umkm') {
-      categoryMatch = item.type === 'umkm' && item.data.rating >= 4.8;
+        (item.type === 'umkm' && (item.data.generalCategory === 'kerajinan' || item.data.generalCategory === 'fashion' || item.data.generalCategory === 'kreatif'));
     }
 
-    if (!categoryMatch) return false;
+    if (!thematicMatch) return false;
 
+    // Subcategory Filter (when in 'all' mode or subcategory is actively specified)
+    if (selectedCategory !== 'all') {
+      let subCategoryMatch = false;
+      if (selectedCategory === 'sejarah') {
+        subCategoryMatch = item.type === 'heritage' && item.data.category === 'sejarah';
+      } else if (selectedCategory === 'botani') {
+        subCategoryMatch = item.type === 'heritage' && item.data.category === 'botani';
+      } else if (selectedCategory === 'kopi') {
+        subCategoryMatch = item.type === 'umkm' && item.data.generalCategory === 'kopi';
+      } else if (selectedCategory === 'kuliner') {
+        subCategoryMatch =
+          (item.type === 'heritage' && item.data.category === 'kuliner') ||
+          (item.type === 'umkm' && item.data.generalCategory === 'kuliner');
+      } else if (selectedCategory === 'bakery') {
+        subCategoryMatch = item.type === 'umkm' && item.data.generalCategory === 'bakery';
+      } else if (selectedCategory === 'kerajinan') {
+        subCategoryMatch =
+          (item.type === 'umkm' && item.data.generalCategory === 'kerajinan') ||
+          (item.type === 'creator' && item.data.category === 'kriya');
+      } else if (selectedCategory === 'fashion') {
+        subCategoryMatch = item.type === 'umkm' && item.data.generalCategory === 'fashion';
+      } else if (selectedCategory === 'kreatif') {
+        subCategoryMatch =
+          item.type === 'creator' ||
+          (item.type === 'umkm' && item.data.generalCategory === 'kreatif');
+      } else if (selectedCategory === 'top_umkm') {
+        subCategoryMatch = item.type === 'umkm' && item.data.rating >= 4.8;
+      }
+      if (!subCategoryMatch) return false;
+    }
+
+    // Text search query filter
     if (!searchQuery.trim()) return true;
 
     const q = searchQuery.toLowerCase();
@@ -154,6 +490,25 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
     }
   });
 
+  // Calculate thematic stats
+  const historyCount = allMapItems.filter(
+    (i) =>
+      (i.type === 'heritage' && (i.data.category === 'sejarah' || i.data.category === 'botani')) ||
+      (i.type === 'umkm' && (i.thematicCategory === 'history' || i.data.notes.toLowerCase().includes('sejak')))
+  ).length;
+
+  const culinaryCount = allMapItems.filter(
+    (i) =>
+      (i.type === 'heritage' && i.data.category === 'kuliner') ||
+      (i.type === 'umkm' && (i.data.generalCategory === 'kuliner' || i.data.generalCategory === 'bakery' || i.data.generalCategory === 'kopi'))
+  ).length;
+
+  const creativeCount = allMapItems.filter(
+    (i) =>
+      i.type === 'creator' ||
+      (i.type === 'umkm' && (i.data.generalCategory === 'kerajinan' || i.data.generalCategory === 'fashion' || i.data.generalCategory === 'kreatif'))
+  ).length;
+
   // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -167,15 +522,15 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const tileUrl = isOffline
-        ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
-      L.tileLayer(tileUrl, {
-        attribution: '&copy; OpenStreetMap contributors & CartoDB',
+      // Determine initial tile
+      const initialConfig = BASEMAP_CONFIGS.find((b) => b.id === activeBasemap) || BASEMAP_CONFIGS[0];
+      const tileLayer = L.tileLayer(initialConfig.url, {
+        attribution: initialConfig.attribution,
         maxZoom: 19,
       }).addTo(map);
 
+      tileLayerRef.current = tileLayer;
+      routeGroupRef.current = L.layerGroup().addTo(map);
       markersGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
     }
@@ -186,9 +541,120 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [isOffline]);
+  }, []);
 
-  // Render markers on the map
+  // Handle Basemap Switcher
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const config = BASEMAP_CONFIGS.find((b) => b.id === activeBasemap) || BASEMAP_CONFIGS[0];
+
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    const newTileLayer = L.tileLayer(config.url, {
+      attribution: config.attribution,
+      maxZoom: 19,
+    }).addTo(mapInstanceRef.current);
+
+    newTileLayer.bringToBack();
+    tileLayerRef.current = newTileLayer;
+  }, [activeBasemap]);
+
+  // Render Thematic Route Polylines and Waypoint Markers
+  useEffect(() => {
+    if (!mapInstanceRef.current || !routeGroupRef.current) return;
+
+    routeGroupRef.current.clearLayers();
+
+    if (!showThematicRoute || thematicLayer === 'all') return;
+
+    const routeDef = THEMATIC_ROUTE_DEFINITIONS[thematicLayer];
+    if (!routeDef || !routeDef.waypoints || routeDef.waypoints.length === 0) return;
+
+    const latLngs = routeDef.waypoints.map((wp) => [wp.lat, wp.lng] as [number, number]);
+
+    // Outer Glow / Route Halo
+    const glowLine = L.polyline(latLngs, {
+      color: routeDef.color,
+      weight: 9,
+      opacity: 0.35,
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+
+    // Inner Dashed Tour Line
+    const coreLine = L.polyline(latLngs, {
+      color: '#ffffff',
+      weight: 3.5,
+      opacity: 0.95,
+      dashArray: '8, 8',
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+
+    routeGroupRef.current.addLayer(glowLine);
+    routeGroupRef.current.addLayer(coreLine);
+
+    // Add Numbered Waypoint Badges along the route
+    routeDef.waypoints.forEach((wp, idx) => {
+      const stopHtml = `
+        <div style="
+          background: ${routeDef.color};
+          color: #ffffff;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 900;
+          font-size: 11px;
+          border: 2.5px solid #ffffff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        " title="${wp.name}">
+          ${idx + 1}
+        </div>
+      `;
+
+      const stopIcon = L.divIcon({
+        html: stopHtml,
+        className: 'thematic-stop-marker',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+
+      const stopMarker = L.marker([wp.lat, wp.lng], {
+        icon: stopIcon,
+        zIndexOffset: 500,
+      });
+
+      stopMarker.bindTooltip(
+        `<div style="font-family: inherit; font-size: 11px; line-height: 1.3;">
+          <div style="font-weight: 800; color: ${routeDef.color};">#${idx + 1} ${lang === 'en' ? wp.nameEn : wp.name}</div>
+          <div style="color: #64748b; font-size: 10px;">${wp.desc}</div>
+        </div>`,
+        {
+          direction: 'top',
+          offset: [0, -14],
+          opacity: 0.98,
+        }
+      );
+
+      stopMarker.on('click', () => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([wp.lat, wp.lng], 16);
+        }
+      });
+
+      routeGroupRef.current?.addLayer(stopMarker);
+    });
+  }, [thematicLayer, showThematicRoute, lang]);
+
+  // Render Markers on Map
   useEffect(() => {
     if (!mapInstanceRef.current || !markersGroupRef.current) return;
 
@@ -252,6 +718,12 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
             iconEmoji = '✨';
             break;
         }
+
+        // Highlight legendary items
+        if (item.thematicCategory === 'history') {
+          categoryColor = '#2563eb';
+          iconEmoji = '📜';
+        }
       } else if (item.type === 'creator') {
         lat = item.data.coordinates.lat;
         lng = item.data.coordinates.lng;
@@ -260,21 +732,30 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
         iconEmoji = '🎨';
       }
 
+      // Special active badge highlight for thematic layer
+      const isThematicActive =
+        (thematicLayer === 'history' && (item.thematicCategory === 'history' || (item.type === 'heritage' && item.data.category === 'sejarah'))) ||
+        (thematicLayer === 'culinary' && (item.thematicCategory === 'culinary' || (item.type === 'umkm' && item.data.generalCategory === 'kuliner'))) ||
+        (thematicLayer === 'creative' && item.thematicCategory === 'creative');
+
+      const pinSize = isThematicActive ? 38 : 34;
+
       const customHtml = `
         <div style="
           background-color: ${categoryColor};
-          width: 36px;
-          height: 36px;
+          width: ${pinSize}px;
+          height: ${pinSize}px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           border: 2.5px solid #ffffff;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-          font-size: 16px;
+          box-shadow: 0 4px 14px ${isThematicActive ? categoryColor + '88' : 'rgba(0,0,0,0.4)'};
+          font-size: ${isThematicActive ? '17px' : '15px'};
           cursor: pointer;
           position: relative;
           transition: transform 0.2s ease;
+          ${isThematicActive ? 'transform: scale(1.08); ring: 2px solid #ffffff;' : ''}
         " title="${title}">
           ${iconEmoji}
           ${
@@ -293,8 +774,8 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
       const customIcon = L.divIcon({
         html: customHtml,
         className: 'custom-map-pin',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
+        iconSize: [pinSize, pinSize],
+        iconAnchor: [pinSize / 2, pinSize / 2],
       });
 
       const marker = L.marker([lat, lng], {
@@ -310,7 +791,7 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
       markersGroupRef.current?.addLayer(marker);
     });
-  }, [filteredMapItems, completedQuestIds]);
+  }, [filteredMapItems, completedQuestIds, thematicLayer]);
 
   // Update Player Position Marker
   useEffect(() => {
@@ -323,16 +804,16 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
     if (isGpsActive) {
       const playerHtml = `
         <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; width: 32px; height: 32px; background: rgba(245, 158, 11, 0.3); border-radius: 50%; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="width: 22px; height: 22px; background: #f59e0b; border: 3px solid #ffffff; border-radius: 50%; box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);"></div>
+          <div style="position: absolute; width: 34px; height: 34px; background: rgba(245, 158, 11, 0.35); border-radius: 50%; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="width: 22px; height: 22px; background: #f59e0b; border: 3px solid #ffffff; border-radius: 50%; box-shadow: 0 0 14px rgba(245, 158, 11, 0.9);"></div>
         </div>
       `;
 
       const playerIcon = L.divIcon({
         html: playerHtml,
         className: 'player-position-pin',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
       });
 
       playerMarkerRef.current = L.marker([userPos.lat, userPos.lng], {
@@ -355,20 +836,206 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
     }
   };
 
+  const handleFitThematicBounds = () => {
+    if (!mapInstanceRef.current || filteredMapItems.length === 0) return;
+
+    const coordinates = filteredMapItems.map((item) => [
+      item.data.coordinates.lat,
+      item.data.coordinates.lng,
+    ] as [number, number]);
+
+    const bounds = L.latLngBounds(coordinates);
+    mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+  };
+
+  const handleSelectThematicPreset = (theme: ThematicLayerType) => {
+    setThematicLayer(theme);
+    setSelectedCategory('all');
+
+    if (theme === 'history') {
+      setEnabledThematicLayers({ history: true, culinary: false, creative: false });
+    } else if (theme === 'culinary') {
+      setEnabledThematicLayers({ history: false, culinary: true, creative: false });
+    } else if (theme === 'creative') {
+      setEnabledThematicLayers({ history: false, culinary: false, creative: true });
+    } else {
+      setEnabledThematicLayers({ history: true, culinary: true, creative: true });
+    }
+
+    // Auto-fit bounds on preset selection after a tick
+    setTimeout(() => {
+      handleFitThematicBounds();
+    }, 150);
+  };
+
+  const toggleLayerCheckbox = (layer: 'history' | 'culinary' | 'creative') => {
+    setEnabledThematicLayers((prev) => {
+      const next = { ...prev, [layer]: !prev[layer] };
+      // Switch thematic tab to 'all' if user uses manual multi-toggle
+      setThematicLayer('all');
+      return next;
+    });
+  };
+
   return (
     <div className="relative w-full h-[calc(100vh-115px)] flex flex-col md:flex-row bg-[#061a12] light:bg-[#f8f5ed] overflow-hidden text-[#f7f4eb] light:text-[#0d2e22]">
       {/* Sidebar Controls (Mobile & Desktop) */}
-      <div className="w-full md:w-96 bg-[#071c14]/90 light:bg-[#f4efe4]/95 backdrop-blur-2xl border-r border-amber-900/30 light:border-amber-800/20 flex flex-col z-20 shadow-2xl max-h-[45vh] md:max-h-full overflow-y-auto">
-        {/* Search & Header */}
-        <div className="p-4 border-b border-amber-900/20 light:border-amber-800/20 space-y-3 bg-[#071c14]/95 light:bg-[#f4efe4]/95 backdrop-blur-xl sticky top-0 z-10">
+      <div className="w-full md:w-96 bg-[#071c14]/95 light:bg-[#f4efe4]/95 backdrop-blur-2xl border-r border-amber-900/30 light:border-amber-800/20 flex flex-col z-20 shadow-2xl max-h-[46vh] md:max-h-full overflow-y-auto">
+        {/* Header & Thematic Mode Selector */}
+        <div className="p-4 border-b border-amber-900/20 light:border-amber-800/20 space-y-3 bg-[#071c14]/98 light:bg-[#f4efe4]/98 backdrop-blur-xl sticky top-0 z-10">
           <div className="flex justify-between items-center">
-            <h2 className="font-extrabold text-sm sm:text-base text-amber-100 light:text-[#0d2e22] flex items-center gap-2">
-              <Compass className="w-5 h-5 text-emerald-400 light:text-emerald-700" />
-              <span>{t('map_title')}</span>
-            </h2>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-amber-200 light:text-amber-900 border border-amber-600/30 font-semibold">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-gradient-to-br from-amber-600 to-emerald-600 rounded-xl shadow-md text-white">
+                <Layers className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-extrabold text-sm sm:text-base text-amber-100 light:text-[#0d2e22] leading-tight flex items-center gap-1.5">
+                  <span>{lang === 'en' ? 'Thematic Maps' : 'Peta Tematik Bogor'}</span>
+                </h2>
+                <p className="text-[10px] text-amber-200/60 light:text-amber-900/60">
+                  {lang === 'en' ? 'Curated layers & walking trails' : 'Layer tematik & rute interaktif'}
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-amber-200 light:text-amber-900 border border-amber-600/30 font-bold">
               {filteredMapItems.length} {lang === 'en' ? 'Points' : 'Titik'}
             </span>
+          </div>
+
+          {/* THEMATIC LAYER PRESET TABS */}
+          <div className="bg-[#051710] light:bg-white/80 p-1.5 rounded-2xl border border-amber-900/30 light:border-amber-800/20 shadow-inner">
+            <div className="text-[10px] font-bold tracking-wider uppercase text-amber-300/80 light:text-amber-800/80 px-2 py-1 flex items-center justify-between">
+              <span>{t('thematic_mode_label')}</span>
+              <span className="text-[9px] lowercase font-normal opacity-70">
+                {thematicLayer === 'all' ? (lang === 'en' ? 'custom' : 'kombinasi') : (lang === 'en' ? 'active' : 'aktif')}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5 mt-1">
+              {/* Wisata Sejarah */}
+              <button
+                onClick={() => handleSelectThematicPreset('history')}
+                className={`p-2 rounded-xl text-left transition flex items-center space-x-2 border ${
+                  thematicLayer === 'history'
+                    ? 'bg-blue-600/30 border-blue-500 text-blue-200 light:text-blue-900 font-extrabold shadow-md'
+                    : 'bg-white/5 light:bg-amber-900/5 hover:bg-white/10 text-amber-100/80 light:text-[#0d2e22] border-white/10 light:border-amber-800/20'
+                }`}
+              >
+                <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300 flex-shrink-0">
+                  <Landmark className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold truncate">
+                    {lang === 'en' ? 'Heritage' : 'Wisata Sejarah'}
+                  </div>
+                  <div className="text-[9px] opacity-70 truncate">
+                    {historyCount} {lang === 'en' ? 'sites' : 'lokasi'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Kuliner Legendaris */}
+              <button
+                onClick={() => handleSelectThematicPreset('culinary')}
+                className={`p-2 rounded-xl text-left transition flex items-center space-x-2 border ${
+                  thematicLayer === 'culinary'
+                    ? 'bg-red-600/30 border-red-500 text-red-200 light:text-red-900 font-extrabold shadow-md'
+                    : 'bg-white/5 light:bg-amber-900/5 hover:bg-white/10 text-amber-100/80 light:text-[#0d2e22] border-white/10 light:border-amber-800/20'
+                }`}
+              >
+                <div className="p-1.5 rounded-lg bg-red-500/20 text-red-300 flex-shrink-0">
+                  <UtensilsCrossed className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold truncate">
+                    {lang === 'en' ? 'Legendary Food' : 'Kuliner Legendaris'}
+                  </div>
+                  <div className="text-[9px] opacity-70 truncate">
+                    {culinaryCount} {lang === 'en' ? 'spots' : 'kuliner'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Ruang Kreatif */}
+              <button
+                onClick={() => handleSelectThematicPreset('creative')}
+                className={`p-2 rounded-xl text-left transition flex items-center space-x-2 border ${
+                  thematicLayer === 'creative'
+                    ? 'bg-cyan-600/30 border-cyan-500 text-cyan-200 light:text-cyan-900 font-extrabold shadow-md'
+                    : 'bg-white/5 light:bg-amber-900/5 hover:bg-white/10 text-amber-100/80 light:text-[#0d2e22] border-white/10 light:border-amber-800/20'
+                }`}
+              >
+                <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 flex-shrink-0">
+                  <Palette className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold truncate">
+                    {lang === 'en' ? 'Creative Spaces' : 'Ruang Kreatif'}
+                  </div>
+                  <div className="text-[9px] opacity-70 truncate">
+                    {creativeCount} {lang === 'en' ? 'studios' : 'studio & seni'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Semua Layer (Eksplorasi Lengkap) */}
+              <button
+                onClick={() => handleSelectThematicPreset('all')}
+                className={`p-2 rounded-xl text-left transition flex items-center space-x-2 border ${
+                  thematicLayer === 'all'
+                    ? 'bg-amber-600/30 border-amber-500 text-amber-200 light:text-amber-900 font-extrabold shadow-md'
+                    : 'bg-white/5 light:bg-amber-900/5 hover:bg-white/10 text-amber-100/80 light:text-[#0d2e22] border-white/10 light:border-amber-800/20'
+                }`}
+              >
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 flex-shrink-0">
+                  <Compass className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold truncate">
+                    {lang === 'en' ? 'All Points' : 'Semua Titik'}
+                  </div>
+                  <div className="text-[9px] opacity-70 truncate">
+                    {allMapItems.length} {lang === 'en' ? 'total' : 'titik'}
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Multi-layer manual checkboxes when in 'all' mode */}
+            {thematicLayer === 'all' && (
+              <div className="mt-2.5 pt-2 border-t border-amber-900/30 flex items-center justify-between gap-1 text-[11px]">
+                <span className="text-[10px] text-amber-200/70 light:text-amber-900/70 font-semibold">
+                  {lang === 'en' ? 'Layer Check:' : 'Pilih Layer:'}
+                </span>
+                <label className="flex items-center space-x-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enabledThematicLayers.history}
+                    onChange={() => toggleLayerCheckbox('history')}
+                    className="accent-blue-500 rounded"
+                  />
+                  <span className="text-[10px] text-blue-300 light:text-blue-900 font-medium">Sejarah</span>
+                </label>
+                <label className="flex items-center space-x-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enabledThematicLayers.culinary}
+                    onChange={() => toggleLayerCheckbox('culinary')}
+                    className="accent-red-500 rounded"
+                  />
+                  <span className="text-[10px] text-red-300 light:text-red-900 font-medium">Kuliner</span>
+                </label>
+                <label className="flex items-center space-x-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enabledThematicLayers.creative}
+                    onChange={() => toggleLayerCheckbox('creative')}
+                    className="accent-cyan-500 rounded"
+                  />
+                  <span className="text-[10px] text-cyan-300 light:text-cyan-900 font-medium">Kreatif</span>
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Search Box */}
@@ -383,7 +1050,7 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
             />
           </div>
 
-          {/* Category Filter Pills */}
+          {/* Sub-Category Filter Pills */}
           <div className="flex space-x-1.5 overflow-x-auto pb-1 text-xs scrollbar-none">
             <button
               onClick={() => setSelectedCategory('all')}
@@ -393,17 +1060,17 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                   : 'bg-white/5 light:bg-amber-900/10 text-amber-100/80 light:text-[#0d2e22] hover:bg-white/10 border border-white/10 light:border-amber-800/20'
               }`}
             >
-              {t('cat_all')} ({allMapItems.length})
+              {t('cat_all')} ({filteredMapItems.length})
             </button>
             <button
-              onClick={() => setSelectedCategory('kopi')}
+              onClick={() => setSelectedCategory('sejarah')}
               className={`px-3 py-1 rounded-full whitespace-nowrap transition backdrop-blur-md flex items-center gap-1 ${
-                selectedCategory === 'kopi'
-                  ? 'bg-amber-900 text-amber-100 font-bold border border-amber-500 shadow-md'
+                selectedCategory === 'sejarah'
+                  ? 'bg-blue-900 text-blue-100 font-bold border border-blue-500 shadow-md'
                   : 'bg-white/5 light:bg-amber-900/10 text-amber-100/80 light:text-[#0d2e22] hover:bg-white/10 border border-white/10'
               }`}
             >
-              {t('cat_coffee')}
+              {t('cat_history')}
             </button>
             <button
               onClick={() => setSelectedCategory('kuliner')}
@@ -416,6 +1083,16 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
               {t('cat_culinary')}
             </button>
             <button
+              onClick={() => setSelectedCategory('kopi')}
+              className={`px-3 py-1 rounded-full whitespace-nowrap transition backdrop-blur-md flex items-center gap-1 ${
+                selectedCategory === 'kopi'
+                  ? 'bg-amber-900 text-amber-100 font-bold border border-amber-500 shadow-md'
+                  : 'bg-white/5 light:bg-amber-900/10 text-amber-100/80 light:text-[#0d2e22] hover:bg-white/10 border border-white/10'
+              }`}
+            >
+              {t('cat_coffee')}
+            </button>
+            <button
               onClick={() => setSelectedCategory('bakery')}
               className={`px-3 py-1 rounded-full whitespace-nowrap transition backdrop-blur-md flex items-center gap-1 ${
                 selectedCategory === 'bakery'
@@ -426,14 +1103,14 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
               {t('cat_bakery')}
             </button>
             <button
-              onClick={() => setSelectedCategory('sejarah')}
+              onClick={() => setSelectedCategory('kreatif')}
               className={`px-3 py-1 rounded-full whitespace-nowrap transition backdrop-blur-md flex items-center gap-1 ${
-                selectedCategory === 'sejarah'
-                  ? 'bg-blue-900 text-blue-100 font-bold border border-blue-500 shadow-md'
+                selectedCategory === 'kreatif'
+                  ? 'bg-sky-900 text-sky-100 font-bold border border-sky-500 shadow-md'
                   : 'bg-white/5 light:bg-amber-900/10 text-amber-100/80 light:text-[#0d2e22] hover:bg-white/10 border border-white/10'
               }`}
             >
-              {t('cat_history')}
+              {t('cat_creators')}
             </button>
             <button
               onClick={() => setSelectedCategory('kerajinan')}
@@ -454,16 +1131,6 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
               }`}
             >
               {t('cat_fashion')}
-            </button>
-            <button
-              onClick={() => setSelectedCategory('kreatif')}
-              className={`px-3 py-1 rounded-full whitespace-nowrap transition backdrop-blur-md flex items-center gap-1 ${
-                selectedCategory === 'kreatif'
-                  ? 'bg-sky-900 text-sky-100 font-bold border border-sky-500 shadow-md'
-                  : 'bg-white/5 light:bg-amber-900/10 text-amber-100/80 light:text-[#0d2e22] hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              {t('cat_creators')}
             </button>
             <button
               onClick={() => setSelectedCategory('top_umkm')}
@@ -610,17 +1277,164 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
       <div className="flex-1 relative h-full">
         <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-        {/* Floating Quick Action Buttons on Map */}
-        <div className="absolute top-4 left-4 z-20 flex flex-col space-y-2">
-          <button
-            onClick={handleCenterUser}
-            className="p-2.5 bg-[#071c14]/90 light:bg-[#f4efe4]/95 hover:bg-[#071c14] text-amber-300 light:text-amber-900 rounded-2xl shadow-xl border border-amber-800/40 light:border-amber-800/20 flex items-center space-x-2 text-xs font-semibold backdrop-blur-xl transition"
-            title={lang === 'en' ? 'Center My Location' : 'Pusatkan Lokasi Saya'}
-          >
-            <Navigation className="w-4 h-4 text-emerald-400 light:text-emerald-700" />
-            <span className="hidden sm:inline text-amber-100 light:text-[#0d2e22]">{t('btn_my_location')}</span>
-          </button>
+        {/* TOP FLOATING THEMATIC CONTROLS BAR (OVER MAP) */}
+        <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+          {/* Left Actions: Center GPS & Fit Bounds */}
+          <div className="flex items-center space-x-2 pointer-events-auto">
+            <button
+              onClick={handleCenterUser}
+              className="px-3 py-2 bg-[#071c14]/90 light:bg-[#f4efe4]/95 hover:bg-[#071c14] text-amber-300 light:text-amber-900 rounded-2xl shadow-xl border border-amber-800/40 light:border-amber-800/20 flex items-center space-x-2 text-xs font-semibold backdrop-blur-xl transition"
+              title={lang === 'en' ? 'Center My Location' : 'Pusatkan Lokasi Saya'}
+            >
+              <Navigation className="w-4 h-4 text-emerald-400 light:text-emerald-700" />
+              <span className="hidden sm:inline text-amber-100 light:text-[#0d2e22]">
+                {t('btn_my_location')}
+              </span>
+            </button>
+
+            <button
+              onClick={handleFitThematicBounds}
+              className="px-3 py-2 bg-[#071c14]/90 light:bg-[#f4efe4]/95 hover:bg-[#071c14] text-amber-300 light:text-amber-900 rounded-2xl shadow-xl border border-amber-800/40 light:border-amber-800/20 flex items-center space-x-1.5 text-xs font-semibold backdrop-blur-xl transition"
+              title={lang === 'en' ? 'Fit all points on screen' : 'Fokuskan semua titik tema'}
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline text-amber-100 light:text-[#0d2e22]">
+                {lang === 'en' ? 'Fit View' : 'Fokus Area'}
+              </span>
+            </button>
+          </div>
+
+          {/* Right Actions: Thematic Route Switch & Basemap Tile Selector */}
+          <div className="flex items-center space-x-2 pointer-events-auto relative">
+            {/* Thematic Route Toggle (when a specific theme is active) */}
+            {thematicLayer !== 'all' && (
+              <button
+                onClick={() => setShowThematicRoute(!showThematicRoute)}
+                className={`px-3 py-2 rounded-2xl shadow-xl border text-xs font-bold backdrop-blur-xl transition flex items-center space-x-1.5 ${
+                  showThematicRoute
+                    ? 'bg-amber-600/90 text-white border-amber-400'
+                    : 'bg-[#071c14]/90 light:bg-[#f4efe4]/95 text-amber-200 light:text-amber-900 border-amber-800/40'
+                }`}
+                title={lang === 'en' ? 'Toggle Thematic Walking Trail' : 'Aktifkan/Matikan Garis Rute Tematik'}
+              >
+                <Route className="w-3.5 h-3.5 text-amber-200" />
+                <span>
+                  {showThematicRoute
+                    ? (lang === 'en' ? 'Trail: ON' : 'Rute: Aktif')
+                    : (lang === 'en' ? 'Trail: OFF' : 'Rute: Mati')}
+                </span>
+              </button>
+            )}
+
+            {/* Basemap Tile Switcher Button */}
+            <div className="relative">
+              <button
+                onClick={() => setIsBasemapMenuOpen(!isBasemapMenuOpen)}
+                className="px-3 py-2 bg-[#071c14]/90 light:bg-[#f4efe4]/95 hover:bg-[#071c14] text-amber-100 light:text-[#0d2e22] rounded-2xl shadow-xl border border-amber-800/40 light:border-amber-800/20 flex items-center space-x-1.5 text-xs font-semibold backdrop-blur-xl transition"
+                title={lang === 'en' ? 'Choose Basemap Tile' : 'Ganti Tampilan Peta Tile'}
+              >
+                <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">
+                  {BASEMAP_CONFIGS.find((b) => b.id === activeBasemap)?.name.split(' ')[0]}
+                </span>
+              </button>
+
+              {/* Basemap Tile Dropdown */}
+              {isBasemapMenuOpen && (
+                <div className="absolute right-0 top-11 w-52 bg-[#071c14]/98 light:bg-[#f8f5ed]/98 backdrop-blur-2xl border border-amber-800/40 rounded-2xl p-2 shadow-2xl z-30 space-y-1">
+                  <div className="text-[10px] uppercase font-bold text-amber-300/70 light:text-amber-900/70 px-2 py-1 border-b border-amber-900/30">
+                    {lang === 'en' ? 'Public Basemap Tile' : 'Pilihan Tile Peta Publik'}
+                  </div>
+                  {BASEMAP_CONFIGS.map((config) => (
+                    <button
+                      key={config.id}
+                      onClick={() => {
+                        setActiveBasemap(config.id);
+                        setIsBasemapMenuOpen(false);
+                      }}
+                      className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs transition flex items-center justify-between ${
+                        activeBasemap === config.id
+                          ? 'bg-amber-600/30 text-amber-200 font-bold border border-amber-500/50'
+                          : 'hover:bg-white/10 text-amber-100/80 light:text-[#0d2e22]'
+                      }`}
+                    >
+                      <span>{lang === 'en' ? config.nameEn : config.name}</span>
+                      {activeBasemap === config.id && <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />}
+                    </button>
+                  ))}
+                  <div className="text-[9px] text-amber-200/50 light:text-amber-900/50 px-2 pt-1">
+                    Leaflet.js + OpenStreetMap Tile
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* ACTIVE THEMATIC GUIDE / BANNER (Floating below top controls) */}
+        {showThematicGuide && thematicLayer !== 'all' && THEMATIC_ROUTE_DEFINITIONS[thematicLayer] && (
+          <div className="absolute top-16 left-4 right-4 md:left-6 md:right-auto md:max-w-md z-20 pointer-events-auto">
+            <div
+              className="bg-[#071c14]/95 light:bg-[#f8f5ed]/95 backdrop-blur-2xl border rounded-2xl p-3 shadow-2xl transition"
+              style={{ borderColor: THEMATIC_ROUTE_DEFINITIONS[thematicLayer].borderAccent }}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <div
+                    className="p-1.5 rounded-xl text-white font-bold text-xs"
+                    style={{ backgroundColor: THEMATIC_ROUTE_DEFINITIONS[thematicLayer].color }}
+                  >
+                    {thematicLayer === 'history' && <Landmark className="w-4 h-4" />}
+                    {thematicLayer === 'culinary' && <UtensilsCrossed className="w-4 h-4" />}
+                    {thematicLayer === 'creative' && <Palette className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-amber-100 light:text-[#0d2e22]">
+                      {lang === 'en'
+                        ? THEMATIC_ROUTE_DEFINITIONS[thematicLayer].titleEn
+                        : THEMATIC_ROUTE_DEFINITIONS[thematicLayer].title}
+                    </div>
+                    <span
+                      className="inline-block text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider mt-0.5 text-white"
+                      style={{ backgroundColor: THEMATIC_ROUTE_DEFINITIONS[thematicLayer].color }}
+                    >
+                      {lang === 'en'
+                        ? THEMATIC_ROUTE_DEFINITIONS[thematicLayer].badgeEn
+                        : THEMATIC_ROUTE_DEFINITIONS[thematicLayer].badge}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowThematicGuide(false)}
+                  className="text-amber-200/60 hover:text-amber-100 text-xs p-1"
+                  title={lang === 'en' ? 'Hide guide' : 'Sembunyikan'}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-[11px] text-amber-200/80 light:text-[#3b2818] mt-2 leading-relaxed">
+                {lang === 'en'
+                  ? THEMATIC_ROUTE_DEFINITIONS[thematicLayer].subtitleEn
+                  : THEMATIC_ROUTE_DEFINITIONS[thematicLayer].subtitle}
+              </p>
+
+              <div className="mt-2.5 pt-2 border-t border-amber-900/30 flex items-center justify-between text-[10px]">
+                <span className="text-amber-300 light:text-amber-900 font-bold flex items-center gap-1">
+                  <Route className="w-3 h-3 text-emerald-400" />
+                  {THEMATIC_ROUTE_DEFINITIONS[thematicLayer].waypoints.length} {lang === 'en' ? 'curated stops' : 'titik perhentian'}
+                </span>
+                <button
+                  onClick={handleFitThematicBounds}
+                  className="text-emerald-300 light:text-emerald-800 font-bold hover:underline"
+                >
+                  {lang === 'en' ? 'Fit all points →' : 'Tampilkan semua titik →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Selected Item Bottom Overlay Banner */}
         {selectedItem && (
@@ -665,7 +1479,7 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
                   <button
                     onClick={() => onSelectQuestLocation(selectedItem.data)}
-                    className="inline-flex items-center space-x-1.5 text-xs bg-gradient-to-r from-emerald-700 via-amber-800 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold px-4 py-2 rounded-xl shadow-lg shadow-amber-950/40 transition transform hover:scale-105 border border-amber-600/30"
+                    className="inline-flex items-center space-x-1.5 text-xs bg-gradient-to-r from-emerald-700 via-amber-800 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold px-4 py-2 rounded-xl shadow-lg shadow-amber-950/40 transition transform hover:scale-105 border border-amber-600/30 cursor-pointer"
                   >
                     <Award className="w-4 h-4 text-amber-200" />
                     <span>

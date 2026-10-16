@@ -118,6 +118,54 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     id: '⭐ Rating 4.8+',
     en: '⭐ Top Rated 4.8+',
   },
+  thematic_maps_title: {
+    id: 'Peta Tematik Kota Bogor',
+    en: 'Bogor Thematic Maps',
+  },
+  thematic_mode_label: {
+    id: 'Mode Peta Tematik',
+    en: 'Thematic Map Layers',
+  },
+  thematic_all: {
+    id: 'Semua Layer',
+    en: 'All Layers',
+  },
+  thematic_history: {
+    id: 'Wisata Sejarah',
+    en: 'Historical Heritage',
+  },
+  thematic_history_desc: {
+    id: 'Cagar budaya, istana, museum, dan situs era Pajajaran & Kolonial',
+    en: 'Heritage sites, palaces, museums, and colonial-era landmarks',
+  },
+  thematic_culinary: {
+    id: 'Kuliner Legendaris',
+    en: 'Legendary Culinary',
+  },
+  thematic_culinary_desc: {
+    id: 'Cita rasa autentik turun-temurun, kuliner Suryakencana & jajanan khas',
+    en: 'Generational iconic recipes, Suryakencana food corridor & legendary dishes',
+  },
+  thematic_creative: {
+    id: 'Ruang Kreatif',
+    en: 'Creative Hubs',
+  },
+  thematic_creative_desc: {
+    id: 'Studio kriya & batik, galeri seni rupa, desainer lokal, dan maker space',
+    en: 'Art studios, craft & batik workshops, local designers & creative spaces',
+  },
+  thematic_botany: {
+    id: 'Taman & Botani',
+    en: 'Botany & Parks',
+  },
+  thematic_route_toggle: {
+    id: 'Rute Jalur Tematik',
+    en: 'Thematic Trail Route',
+  },
+  thematic_layer_selector: {
+    id: 'Pilihan Layer Tematik',
+    en: 'Thematic Layer Selector',
+  },
   sim_gps_label: {
     id: 'Simulasi Lokasi GPS Pengguna',
     en: 'Simulate User GPS Location',
