@@ -84,8 +84,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F2A21]/80 backdrop-blur-xl overflow-y-auto text-[#F7F1E3]">
-      <div className="bg-[#0F2A21] border border-[#3F7D64]/50 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#F7F1E3] my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#0F2A21]/80 backdrop-blur-xl overflow-y-auto text-[#F7F1E3]">
+      <div className="bg-[#0F2A21] border border-[#3F7D64]/50 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#F7F1E3] my-auto max-h-[92vh]">
         {/* Modal Header */}
         <div className="p-5 bg-gradient-to-r from-[#1B4D3E] via-[#0F2A21] to-[#1B4D3E] border-b border-[#3F7D64]/40 flex justify-between items-center">
           <div className="flex items-center space-x-2">

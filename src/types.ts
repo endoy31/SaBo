@@ -235,3 +235,24 @@ export interface LeaderboardEntry {
   recentActivity?: string;
 }
 
+export interface DailyChallengeHistoryItem {
+  date: string;
+  locationId: string;
+  locationName: string;
+  xpEarned: number;
+}
+
+export interface DailyHeritageChallenge {
+  date: string; // YYYY-MM-DD format
+  locationId: string;
+  bonusXp: number;
+  completed: boolean;
+  checkedIn: boolean;
+  audioListened: boolean;
+  triviaCompleted: boolean;
+  streak: number;
+  lastCompletedDate?: string;
+  completedHistory: DailyChallengeHistoryItem[];
+  notificationsEnabled?: boolean;
+}
+

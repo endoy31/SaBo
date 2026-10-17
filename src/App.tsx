@@ -11,12 +11,16 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { BadgeUnlockModal } from './components/BadgeUnlockModal';
 import { ProximityAlertBanner } from './components/ProximityAlertBanner';
 import { Footer } from './components/Footer';
+import { Bogor3DOpening } from './components/Bogor3DOpening';
+import { ModuleDailyChallenges } from './components/ModuleDailyChallenges';
+import { DailyChallengeNotificationBanner } from './components/DailyChallengeNotificationBanner';
 
 import {
   UserProfile,
   HeritageLocation,
   CommunityReview,
   Itinerary,
+  DailyHeritageChallenge,
 } from './types';
 import { HERITAGE_LOCATIONS } from './data/bogorData';
 import { AVATAR_PRESETS } from './data/avatars';
@@ -26,14 +30,27 @@ import {
   findNearbyPlaces,
 } from './utils/geolocationManager';
 import { LanguageProvider, useLanguage } from './utils/translations';
+import {
+  loadDailyChallengeState,
+  saveDailyChallengeState,
+  getTodayDateString,
+  isUserNearTarget,
+} from './utils/dailyChallengeManager';
 
 function AppInner() {
   const { lang } = useLanguage();
+  const [show3DOpening, setShow3DOpening] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('map');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [selectedQuestLocation, setSelectedQuestLocation] =
     useState<HeritageLocation | null>(null);
   const [unlockedBadgeModal, setUnlockedBadgeModal] = useState<string | null>(null);
+
+  // Daily Heritage Challenge State
+  const [dailyChallenge, setDailyChallenge] = useState<DailyHeritageChallenge>(() =>
+    loadDailyChallengeState()
+  );
+  const [dismissedDailyBanner, setDismissedDailyBanner] = useState<boolean>(false);
 
   // Theme Mode Preference (Dark / Light Mode)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -204,11 +221,68 @@ function AppInner() {
       if (!justUnlockedBadge) justUnlockedBadge = 'Saba Bogor Hero';
     }
 
+    // If this quest corresponds to today's daily challenge, mark trivia as completed
+    if (locationId === dailyChallenge.locationId && !dailyChallenge.triviaCompleted) {
+      const updated = { ...dailyChallenge, triviaCompleted: true };
+      setDailyChallenge(updated);
+      saveDailyChallengeState(updated);
+    }
+
     setUser({
       ...user,
       xp: newXp,
       level: newLevel,
       completedQuests: newQuests,
+      badges: newBadges,
+    });
+
+    if (justUnlockedBadge) {
+      setUnlockedBadgeModal(justUnlockedBadge);
+    }
+  };
+
+  // Daily Challenge Bonus XP Claim Handler
+  const handleClaimDailyXp = (totalXp: number, locationName: string) => {
+    const today = getTodayDateString();
+    const newXp = user.xp + totalXp;
+    const newLevel = Math.floor(newXp / 250) + 1;
+    const newStreak = dailyChallenge.streak + 1;
+    const newHistory = [
+      {
+        date: today,
+        locationId: dailyChallenge.locationId,
+        locationName,
+        xpEarned: totalXp,
+      },
+      ...(dailyChallenge.completedHistory || []).filter((h) => h.date !== today),
+    ];
+
+    let newBadges = [...user.badges];
+    let justUnlockedBadge: string | null = null;
+    if (newStreak >= 3 && !newBadges.includes('Peminat Sejarah Harian')) {
+      newBadges.push('Peminat Sejarah Harian');
+      justUnlockedBadge = 'Peminat Sejarah Harian';
+    }
+    if (newStreak >= 7 && !newBadges.includes('Pejuang 7 Hari Saba Bogor')) {
+      newBadges.push('Pejuang 7 Hari Saba Bogor');
+      justUnlockedBadge = 'Pejuang 7 Hari Saba Bogor';
+    }
+
+    const updatedChallenge: DailyHeritageChallenge = {
+      ...dailyChallenge,
+      completed: true,
+      streak: newStreak,
+      lastCompletedDate: today,
+      completedHistory: newHistory,
+    };
+
+    setDailyChallenge(updatedChallenge);
+    saveDailyChallengeState(updatedChallenge);
+
+    setUser({
+      ...user,
+      xp: newXp,
+      level: newLevel,
       badges: newBadges,
     });
 
@@ -298,7 +372,36 @@ function AppInner() {
           setIsGpsActive={setIsGpsActive}
           theme={theme}
           setTheme={setTheme}
+          onOpen3DOpening={() => setShow3DOpening(true)}
+          dailyChallengePending={!dailyChallenge.completed}
+          dailyStreak={dailyChallenge.streak}
         />
+
+        {/* Daily Heritage Challenge In-App Notification Banner */}
+        {!dailyChallenge.completed && !dismissedDailyBanner && activeTab !== 'challenges' && (
+          <DailyChallengeNotificationBanner
+            location={
+              HERITAGE_LOCATIONS.find((l) => l.id === dailyChallenge.locationId) ||
+              HERITAGE_LOCATIONS[0]
+            }
+            bonusXp={dailyChallenge.bonusXp}
+            streak={dailyChallenge.streak}
+            distanceMeters={
+              isUserNearTarget(
+                userPos,
+                (
+                  HERITAGE_LOCATIONS.find((l) => l.id === dailyChallenge.locationId) ||
+                  HERITAGE_LOCATIONS[0]
+                ).coordinates
+              ).distanceMeters
+            }
+            onOpenChallenge={() => {
+              setActiveTab('challenges');
+              setDismissedDailyBanner(true);
+            }}
+            onDismiss={() => setDismissedDailyBanner(true)}
+          />
+        )}
 
         {/* Proximity Geofencing Banner */}
         {activeNearby && (
@@ -314,6 +417,19 @@ function AppInner() {
 
         {/* Main Module Content Views */}
         <main className="flex-1">
+          {activeTab === 'challenges' && (
+            <ModuleDailyChallenges
+              challengeState={dailyChallenge}
+              setChallengeState={setDailyChallenge}
+              user={user}
+              userPos={userPos}
+              onClaimDailyXp={handleClaimDailyXp}
+              onOpenQuestModal={(loc) => setSelectedQuestLocation(loc)}
+              onNavigateToMap={() => setActiveTab('map')}
+              onNavigateToHeritage={() => setActiveTab('heritage')}
+            />
+          )}
+
           {activeTab === 'map' && (
             <ModuleMap
               onSelectQuestLocation={(loc) => setSelectedQuestLocation(loc)}
@@ -385,6 +501,14 @@ function AppInner() {
         {/* Footer */}
         <Footer />
       </div>
+
+      {/* Three.js 3D Kota Bogor Opening Experience */}
+      {show3DOpening && (
+        <Bogor3DOpening
+          onEnterApp={() => setShow3DOpening(false)}
+          isInitialOpening={true}
+        />
+      )}
     </div>
   );
 }

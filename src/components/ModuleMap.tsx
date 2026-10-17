@@ -26,6 +26,9 @@ import {
   Maximize2,
   Eye,
   EyeOff,
+  ChevronDown,
+  ChevronUp,
+  X,
 } from 'lucide-react';
 import { HERITAGE_LOCATIONS, CREATORS } from '../data/bogorData';
 import { BOGOR_UMKM_DATABASE } from '../data/umkmData';
@@ -313,7 +316,16 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   // Standard category filter
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<MapDisplayItem | null>(null);
+  const [isItemCardMinimized, setIsItemCardMinimized] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobilePanelCollapsed, setIsMobilePanelCollapsed] = useState<boolean>(false);
+
+  const handleCloseCard = () => {
+    setSelectedItem(null);
+    try {
+      sessionStorage.setItem('sabo_map_card_dismissed', 'true');
+    } catch (e) {}
+  };
 
   // Fixed coordinates for creators
   const creatorCoordinatesMap: Record<string, { lat: number; lng: number }> = {
@@ -379,9 +391,13 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
     } as MapDisplayItem)),
   ];
 
-  // Set initial selected item on mount
+  // Set initial selected item on mount (only if user hasn't closed it in this session)
   useEffect(() => {
-    if (!selectedItem && allMapItems.length > 0) {
+    let wasDismissed = false;
+    try {
+      wasDismissed = sessionStorage.getItem('sabo_map_card_dismissed') === 'true';
+    } catch (e) {}
+    if (!selectedItem && allMapItems.length > 0 && !wasDismissed) {
       setSelectedItem(allMapItems[0]);
     }
   }, []);
@@ -784,6 +800,7 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
       marker.on('click', () => {
         setSelectedItem(item);
+        setIsItemCardMinimized(false);
         if (mapInstanceRef.current) {
           mapInstanceRef.current.panTo([lat, lng]);
         }
@@ -880,26 +897,55 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   return (
     <div className="relative w-full h-[calc(100vh-115px)] flex flex-col md:flex-row bg-[#061a12] light:bg-[#f8f5ed] overflow-hidden text-[#f7f4eb] light:text-[#0d2e22]">
       {/* Sidebar Controls (Mobile & Desktop) */}
-      <div className="w-full md:w-96 bg-[#071c14]/95 light:bg-[#f4efe4]/95 backdrop-blur-2xl border-r border-amber-900/30 light:border-amber-800/20 flex flex-col z-20 shadow-2xl max-h-[46vh] md:max-h-full overflow-y-auto">
+      <div
+        className={`w-full md:w-96 bg-[#071c14]/95 light:bg-[#f4efe4]/95 backdrop-blur-2xl border-r border-amber-900/30 light:border-amber-800/20 flex flex-col z-20 shadow-2xl transition-all duration-300 ${
+          isMobilePanelCollapsed
+            ? 'max-h-[56px] overflow-hidden'
+            : 'max-h-[46vh] md:max-h-full overflow-y-auto'
+        }`}
+      >
         {/* Header & Thematic Mode Selector */}
-        <div className="p-4 border-b border-amber-900/20 light:border-amber-800/20 space-y-3 bg-[#071c14]/98 light:bg-[#f4efe4]/98 backdrop-blur-xl sticky top-0 z-10">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-gradient-to-br from-amber-600 to-emerald-600 rounded-xl shadow-md text-white">
+        <div className="p-3 sm:p-4 border-b border-amber-900/20 light:border-amber-800/20 space-y-2.5 sm:space-y-3 bg-[#071c14]/98 light:bg-[#f4efe4]/98 backdrop-blur-xl sticky top-0 z-10">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1.5 bg-gradient-to-br from-amber-600 to-emerald-600 rounded-xl shadow-md text-white flex-shrink-0">
                 <Layers className="w-4 h-4" />
               </div>
-              <div>
-                <h2 className="font-extrabold text-sm sm:text-base text-amber-100 light:text-[#0d2e22] leading-tight flex items-center gap-1.5">
+              <div className="min-w-0">
+                <h2 className="font-extrabold text-sm sm:text-base text-amber-100 light:text-[#0d2e22] leading-tight flex items-center gap-1.5 truncate">
                   <span>{lang === 'en' ? 'Thematic Maps' : 'Peta Tematik Bogor'}</span>
                 </h2>
-                <p className="text-[10px] text-amber-200/60 light:text-amber-900/60">
+                <p className="text-[10px] text-amber-200/60 light:text-amber-900/60 hidden sm:block truncate">
                   {lang === 'en' ? 'Curated layers & walking trails' : 'Layer tematik & rute interaktif'}
                 </p>
               </div>
             </div>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-amber-200 light:text-amber-900 border border-amber-600/30 font-bold">
-              {filteredMapItems.length} {lang === 'en' ? 'Points' : 'Titik'}
-            </span>
+
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-amber-200 light:text-amber-900 border border-amber-600/30 font-bold whitespace-nowrap">
+                {filteredMapItems.length} {lang === 'en' ? 'Pts' : 'Titik'}
+              </span>
+
+              {/* Mobile collapse / expand toggle */}
+              <button
+                onClick={() => setIsMobilePanelCollapsed(!isMobilePanelCollapsed)}
+                className="md:hidden p-1 sm:p-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95"
+                title={isMobilePanelCollapsed ? 'Buka Panel Filter' : 'Tutup Panel (Lihat Peta Penuh)'}
+                aria-label="Toggle Mobile Panel"
+              >
+                {isMobilePanelCollapsed ? (
+                  <>
+                    <ChevronDown className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[10px]">Filter</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[10px]">Peta</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* THEMATIC LAYER PRESET TABS */}
@@ -1209,6 +1255,7 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                 key={`${item.type}_${item.data.id}`}
                 onClick={() => {
                   setSelectedItem(item);
+                  setIsItemCardMinimized(false);
                   if (mapInstanceRef.current) {
                     mapInstanceRef.current.flyTo([lat, lng], 16);
                   }
@@ -1436,206 +1483,309 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
           </div>
         )}
 
-        {/* Selected Item Bottom Overlay Banner */}
+        {/* Selected Item Bottom Overlay Banner with Close (X) & Minimize (Perkecil) Controls */}
         {selectedItem && (
-          <div className="absolute bottom-4 left-4 right-4 md:left-6 md:right-auto md:w-[500px] z-20 bg-[#071c14]/95 light:bg-[#f8f5ed]/95 backdrop-blur-2xl border border-amber-700/40 light:border-amber-800/30 rounded-3xl p-4 shadow-2xl text-amber-100 light:text-[#0d2e22]">
-            {selectedItem.type === 'heritage' && (
-              <>
-                <div className="flex gap-3">
-                  <img
-                    src={selectedItem.data.image}
-                    alt={selectedItem.data.name}
-                    className="w-20 h-20 rounded-2xl object-cover border border-amber-800/40 bg-emerald-950 flex-shrink-0 shadow"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-emerald-200 light:text-emerald-900 border border-emerald-600/30">
-                        {selectedItem.data.category} • {selectedItem.data.builtOrFounded || 'Kota Bogor'}
-                      </span>
-                      <span className="text-xs font-bold text-amber-300 light:text-amber-900 bg-amber-900/40 light:bg-amber-800/15 px-2 py-0.5 rounded-full border border-amber-600/30">
+          isItemCardMinimized ? (
+            /* 1. Minimized Compact Bar (Non-spammy, unblocks the map) */
+            <div className="absolute bottom-4 left-3 right-3 sm:left-6 sm:right-auto sm:max-w-md z-20 bg-[#071c14]/95 light:bg-[#f8f5ed]/95 backdrop-blur-2xl border border-amber-600/50 light:border-amber-800/40 rounded-2xl p-2 sm:p-2.5 shadow-2xl text-amber-100 light:text-[#0d2e22] flex items-center justify-between gap-2.5 animate-fadeIn transition-all">
+              <div
+                onClick={() => setIsItemCardMinimized(false)}
+                className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
+                title={lang === 'en' ? 'Click to expand details' : 'Klik untuk perbesar detail'}
+              >
+                <img
+                  src={
+                    selectedItem.type === 'heritage'
+                      ? selectedItem.data.image
+                      : selectedItem.type === 'umkm'
+                      ? selectedItem.data.image
+                      : selectedItem.data.avatar
+                  }
+                  alt={selectedItem.data.name}
+                  className="w-10 h-10 rounded-xl object-cover border border-amber-700/50 flex-shrink-0 shadow group-hover:scale-105 transition"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-800/40 text-emerald-300 light:text-emerald-900 border border-emerald-600/30 truncate max-w-[140px]">
+                      {selectedItem.type === 'heritage'
+                        ? `${selectedItem.data.category}`
+                        : selectedItem.type === 'umkm'
+                        ? `#${selectedItem.data.number} ${selectedItem.data.category}`
+                        : selectedItem.data.category}
+                    </span>
+                    {selectedItem.type === 'heritage' && (
+                      <span className="text-[10px] font-bold text-amber-300 light:text-amber-900">
                         +{selectedItem.data.xpReward} XP
                       </span>
-                    </div>
-
-                    <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
-                      {selectedItem.data.name}
-                    </h3>
-                    <p className="text-[11px] text-amber-200/70 light:text-[#3b2818] line-clamp-2 mt-1 leading-relaxed">
-                      {selectedItem.data.overview}
-                    </p>
+                    )}
+                    {selectedItem.type === 'umkm' && (
+                      <span className="text-[10px] font-bold text-amber-300 flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        {selectedItem.data.rating}
+                      </span>
+                    )}
                   </div>
+                  <h4 className="font-extrabold text-xs text-amber-100 light:text-[#0d2e22] truncate mt-0.5 group-hover:text-amber-300 transition">
+                    {selectedItem.data.name}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => setIsItemCardMinimized(false)}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-800/40 hover:bg-amber-700/50 light:bg-amber-800/20 text-amber-200 hover:text-white light:text-amber-900 border border-amber-600/40 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-sm active:scale-95"
+                  title={lang === 'en' ? 'Expand details' : 'Perbesar detail'}
+                  aria-label="Perbesar detail"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-300 light:text-amber-800" />
+                  <span className="text-[10px] hidden xs:inline">{lang === 'en' ? 'Expand' : 'Perbesar'}</span>
+                </button>
+                <button
+                  onClick={handleCloseCard}
+                  className="p-1.5 rounded-xl bg-red-950/50 hover:bg-red-900/80 light:bg-stone-200 text-amber-200/80 hover:text-white light:text-stone-700 border border-red-500/40 hover:border-red-400 transition cursor-pointer shadow-sm active:scale-95"
+                  title={lang === 'en' ? 'Close card (X)' : 'Tutup (X)'}
+                  aria-label="Tutup"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* 2. Full Expanded Spotlight Card with Clear Perkecil & Cross (X) buttons */
+            <div className="absolute bottom-4 left-3 right-3 sm:left-4 sm:right-auto md:w-[500px] z-20 bg-[#071c14]/95 light:bg-[#f8f5ed]/95 backdrop-blur-2xl border border-amber-700/40 light:border-amber-800/30 rounded-3xl p-3.5 sm:p-4 shadow-2xl text-amber-100 light:text-[#0d2e22] transition-all max-h-[80vh] overflow-y-auto">
+              {/* Header Action Strip: Spotlight Indicator + Perkecil (Minimize) + Close (X) */}
+              <div className="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-amber-900/30 light:border-amber-800/20">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 animate-pulse" />
+                  <span className="text-[11px] font-bold text-amber-300/90 light:text-amber-900 truncate">
+                    {selectedItem.type === 'heritage'
+                      ? (lang === 'en' ? 'Heritage Spotlight & Trivia' : 'Trivia & Info Destinasi')
+                      : selectedItem.type === 'umkm'
+                      ? (lang === 'en' ? 'Curated Local UMKM' : 'UMKM Warisan & Kuliner')
+                      : (lang === 'en' ? 'Local Creator Studio' : 'Studio Kreator Lokal')}
+                  </span>
                 </div>
 
-                <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                  <a
-                    href={selectedItem.data.googleMapsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
-                  >
-                    <Navigation className="w-3.5 h-3.5" />
-                    <span>{t('btn_route_gmaps')}</span>
-                  </a>
-
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
-                    onClick={() => onSelectQuestLocation(selectedItem.data)}
-                    className="inline-flex items-center space-x-1.5 text-xs bg-gradient-to-r from-emerald-700 via-amber-800 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold px-4 py-2 rounded-xl shadow-lg shadow-amber-950/40 transition transform hover:scale-105 border border-amber-600/30 cursor-pointer"
+                    onClick={() => setIsItemCardMinimized(true)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-900/40 hover:bg-amber-800/60 light:bg-amber-800/15 text-amber-200 hover:text-white light:text-amber-900 border border-amber-700/40 text-[10px] font-bold transition cursor-pointer active:scale-95"
+                    title={lang === 'en' ? 'Minimize card' : 'Perkecil kartu'}
+                    aria-label="Perkecil kartu"
                   >
-                    <Award className="w-4 h-4 text-amber-200" />
-                    <span>
-                      {completedQuestIds.includes(selectedItem.data.id)
-                        ? t('btn_repeat_quest')
-                        : t('btn_start_quest')}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronDown className="w-3.5 h-3.5 text-amber-300 light:text-amber-800" />
+                    <span>{lang === 'en' ? 'Minimize' : 'Perkecil'}</span>
+                  </button>
+                  <button
+                    onClick={handleCloseCard}
+                    className="p-1 rounded-xl bg-red-950/40 hover:bg-red-900/70 light:bg-stone-200 text-amber-200/80 hover:text-white light:text-stone-700 border border-red-500/30 hover:border-red-400 transition cursor-pointer active:scale-95"
+                    title={lang === 'en' ? 'Close card (X)' : 'Tutup kartu (X)'}
+                    aria-label="Tutup kartu"
+                  >
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
-              </>
-            )}
+              </div>
 
-            {selectedItem.type === 'umkm' && (
-              <>
-                <div className="flex gap-3">
-                  <img
-                    src={selectedItem.data.image}
-                    alt={selectedItem.data.name}
-                    className="w-20 h-20 rounded-2xl object-cover border border-amber-800/40 bg-emerald-950 flex-shrink-0 shadow"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-800/30 light:bg-amber-800/15 text-amber-300 light:text-amber-900 border border-amber-600/30">
-                        #{selectedItem.data.number} {selectedItem.data.category}
-                      </span>
-                      <span className="text-xs font-bold text-amber-300 light:text-amber-900 bg-amber-900/40 light:bg-amber-800/15 px-2 py-0.5 rounded-full border border-amber-600/30 flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        {selectedItem.data.rating} ({selectedItem.data.reviewCount.toLocaleString(lang === 'en' ? 'en-US' : 'id-ID')} {lang === 'en' ? 'reviews' : 'ulasan'})
-                      </span>
+              {selectedItem.type === 'heritage' && (
+                <>
+                  <div className="flex gap-3">
+                    <img
+                      src={selectedItem.data.image}
+                      alt={selectedItem.data.name}
+                      className="w-20 h-20 rounded-2xl object-cover border border-amber-800/40 bg-emerald-950 flex-shrink-0 shadow"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-800/30 light:bg-emerald-800/15 text-emerald-200 light:text-emerald-900 border border-emerald-600/30">
+                          {selectedItem.data.category} • {selectedItem.data.builtOrFounded || 'Kota Bogor'}
+                        </span>
+                        <span className="text-xs font-bold text-amber-300 light:text-amber-900 bg-amber-900/40 light:bg-amber-800/15 px-2 py-0.5 rounded-full border border-amber-600/30">
+                          +{selectedItem.data.xpReward} XP
+                        </span>
+                      </div>
+
+                      <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
+                        {selectedItem.data.name}
+                      </h3>
+                      <p className="text-[11px] text-amber-200/70 light:text-[#3b2818] line-clamp-2 mt-1 leading-relaxed">
+                        {selectedItem.data.overview}
+                      </p>
                     </div>
-
-                    <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
-                      {selectedItem.data.name}
-                    </h3>
-                    <p className="text-[11px] text-amber-200/80 light:text-[#3b2818] mt-1">
-                      📍 {selectedItem.data.address}
-                    </p>
-                    <p className="text-[11px] text-amber-300/80 light:text-amber-900/80 mt-0.5 font-medium italic">
-                      "{selectedItem.data.notes}"
-                    </p>
                   </div>
-                </div>
 
-                <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                  <a
-                    href={selectedItem.data.googleMapsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
-                  >
-                    <Navigation className="w-3.5 h-3.5" />
-                    <span>{t('route_google_maps')}</span>
-                  </a>
+                  <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
+                    <a
+                      href={selectedItem.data.googleMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>{t('btn_route_gmaps')}</span>
+                    </a>
 
-                  <div className="flex items-center gap-1.5">
-                    {selectedItem.data.whatsapp && (
-                      <a
-                        href={selectedItem.data.whatsapp}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition shadow"
-                        title="Chat WhatsApp"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </a>
-                    )}
-
-                    {selectedItem.data.instagram && (
-                      <a
-                        href={selectedItem.data.instagram}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center space-x-1 text-xs bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold px-2.5 py-1.5 rounded-xl transition shadow"
-                        title="Instagram"
-                      >
-                        <Instagram className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-
-                    {selectedItem.data.phone && !selectedItem.data.whatsapp && (
-                      <a
-                        href={`tel:${selectedItem.data.phone}`}
-                        className="inline-flex items-center space-x-1 text-xs bg-amber-800/40 hover:bg-amber-800/60 text-amber-200 font-bold px-2.5 py-1.5 rounded-xl border border-amber-600/30 transition shadow"
-                        title={lang === 'en' ? 'Phone' : 'Telepon'}
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </a>
-                    )}
+                    <button
+                      onClick={() => onSelectQuestLocation(selectedItem.data)}
+                      className="inline-flex items-center space-x-1.5 text-xs bg-gradient-to-r from-emerald-700 via-amber-800 to-amber-700 hover:from-emerald-600 hover:to-amber-600 text-amber-100 font-extrabold px-4 py-2 rounded-xl shadow-lg shadow-amber-950/40 transition transform hover:scale-105 border border-amber-600/30 cursor-pointer"
+                    >
+                      <Award className="w-4 h-4 text-amber-200" />
+                      <span>
+                        {completedQuestIds.includes(selectedItem.data.id)
+                          ? t('btn_repeat_quest')
+                          : t('btn_start_quest')}
+                      </span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
-            {selectedItem.type === 'creator' && (
-              <>
-                <div className="flex gap-3">
-                  <img
-                    src={selectedItem.data.avatar}
-                    alt={selectedItem.data.name}
-                    className="w-20 h-20 rounded-2xl object-cover border border-sky-400/40 bg-slate-900 flex-shrink-0 shadow"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
-                        {lang === 'en' ? 'Creator' : 'Kreator'} • {selectedItem.data.category}
-                      </span>
-                      <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30">
-                        Zero Fee
-                      </span>
+              {selectedItem.type === 'umkm' && (
+                <>
+                  <div className="flex gap-3">
+                    <img
+                      src={selectedItem.data.image}
+                      alt={selectedItem.data.name}
+                      className="w-20 h-20 rounded-2xl object-cover border border-amber-800/40 bg-emerald-950 flex-shrink-0 shadow"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-800/30 light:bg-amber-800/15 text-amber-300 light:text-amber-900 border border-amber-600/30">
+                          #{selectedItem.data.number} {selectedItem.data.category}
+                        </span>
+                        <span className="text-xs font-bold text-amber-300 light:text-amber-900 bg-amber-900/40 light:bg-amber-800/15 px-2 py-0.5 rounded-full border border-amber-600/30 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          {selectedItem.data.rating} ({selectedItem.data.reviewCount.toLocaleString(lang === 'en' ? 'en-US' : 'id-ID')} {lang === 'en' ? 'reviews' : 'ulasan'})
+                        </span>
+                      </div>
+
+                      <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
+                        {selectedItem.data.name}
+                      </h3>
+                      <p className="text-[11px] text-amber-200/80 light:text-[#3b2818] mt-1">
+                        📍 {selectedItem.data.address}
+                      </p>
+                      <p className="text-[11px] text-amber-300/80 light:text-amber-900/80 mt-0.5 font-medium italic">
+                        "{selectedItem.data.notes}"
+                      </p>
                     </div>
-
-                    <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
-                      {selectedItem.data.name}
-                    </h3>
-                    <p className="text-[11px] text-amber-200/80 light:text-[#3b2818] mt-1 line-clamp-2">
-                      {selectedItem.data.bio}
-                    </p>
                   </div>
-                </div>
 
-                <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs text-amber-200/70 light:text-[#3b2818] flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-sky-400" />
-                    {selectedItem.data.address}
-                  </span>
+                  <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
+                    <a
+                      href={selectedItem.data.googleMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>{t('route_google_maps')}</span>
+                    </a>
 
-                  <div className="flex items-center gap-1.5">
-                    {selectedItem.data.links.whatsapp && (
-                      <a
-                        href={selectedItem.data.links.whatsapp}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition shadow"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>WhatsApp</span>
-                      </a>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {selectedItem.data.whatsapp && (
+                        <a
+                          href={selectedItem.data.whatsapp}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition shadow"
+                          title="Chat WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
 
-                    {selectedItem.data.links.instagram && (
-                      <a
-                        href={selectedItem.data.links.instagram}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center space-x-1 text-xs bg-pink-600 hover:bg-pink-500 text-white font-bold px-2.5 py-1.5 rounded-xl transition shadow"
-                      >
-                        <Instagram className="w-3.5 h-3.5" />
-                      </a>
-                    )}
+                      {selectedItem.data.instagram && (
+                        <a
+                          href={selectedItem.data.instagram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center space-x-1 text-xs bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold px-2.5 py-1.5 rounded-xl transition shadow"
+                          title="Instagram"
+                        >
+                          <Instagram className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+
+                      {selectedItem.data.phone && !selectedItem.data.whatsapp && (
+                        <a
+                          href={`tel:${selectedItem.data.phone}`}
+                          className="inline-flex items-center space-x-1 text-xs bg-amber-800/40 hover:bg-amber-800/60 text-amber-200 font-bold px-2.5 py-1.5 rounded-xl border border-amber-600/30 transition shadow"
+                          title={lang === 'en' ? 'Phone' : 'Telepon'}
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                </>
+              )}
+
+              {selectedItem.type === 'creator' && (
+                <>
+                  <div className="flex gap-3">
+                    <img
+                      src={selectedItem.data.avatar}
+                      alt={selectedItem.data.name}
+                      className="w-20 h-20 rounded-2xl object-cover border border-sky-400/40 bg-slate-900 flex-shrink-0 shadow"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                          {lang === 'en' ? 'Creator' : 'Kreator'} • {selectedItem.data.category}
+                        </span>
+                        <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                          Zero Fee
+                        </span>
+                      </div>
+
+                      <h3 className="font-extrabold text-sm text-amber-100 light:text-[#0d2e22] mt-1.5 leading-snug">
+                        {selectedItem.data.name}
+                      </h3>
+                      <p className="text-[11px] text-amber-200/80 light:text-[#3b2818] mt-1 line-clamp-2">
+                        {selectedItem.data.bio}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs text-amber-200/70 light:text-[#3b2818] flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-sky-400" />
+                      {selectedItem.data.address}
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      {selectedItem.data.links.whatsapp && (
+                        <a
+                          href={selectedItem.data.links.whatsapp}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-xl transition shadow"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
+
+                      {selectedItem.data.links.instagram && (
+                        <a
+                          href={selectedItem.data.links.instagram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center space-x-1 text-xs bg-pink-600 hover:bg-pink-500 text-white font-bold px-2.5 py-1.5 rounded-xl transition shadow"
+                        >
+                          <Instagram className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )
         )}
       </div>
     </div>

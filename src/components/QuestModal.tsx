@@ -108,8 +108,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#051710]/85 backdrop-blur-xl overflow-y-auto text-[#f7f4eb]">
-      <div className="bg-[#071c14]/90 backdrop-blur-2xl border border-amber-800/40 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto text-amber-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#051710]/85 backdrop-blur-xl overflow-y-auto text-[#f7f4eb]">
+      <div className="bg-[#071c14]/95 backdrop-blur-2xl border border-amber-800/40 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto text-amber-100 max-h-[92vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="relative h-48 sm:h-56 w-full">
           <img

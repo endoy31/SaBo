@@ -44,6 +44,10 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     id: 'Peta Interaktif & Quest',
     en: 'Interactive Map & Quests',
   },
+  nav_challenges: {
+    id: 'Tantangan Harian',
+    en: 'Daily Challenges',
+  },
   nav_creators: {
     id: 'Creator Hub & Direct Link',
     en: 'Creator & UMKM Hub',
@@ -165,6 +169,155 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
   thematic_layer_selector: {
     id: 'Pilihan Layer Tematik',
     en: 'Thematic Layer Selector',
+  },
+  btn_open_3d_bogor: {
+    id: '🏙️ 3D Kota Bogor',
+    en: '🏙️ 3D Bogor City',
+  },
+  bogor_3d_title: {
+    id: 'Diorama 3D Kota Bogor',
+    en: 'Kota Bogor 3D Experience',
+  },
+  bogor_3d_subtitle: {
+    id: 'Ikon Monumen Kujang, Istana Buitenzorg & Panorama Gunung Salak',
+    en: 'Iconic Kujang Monument, Buitenzorg Palace & Mount Salak Vista',
+  },
+  btn_enter_sabo: {
+    id: '🚀 Masuk ke Aplikasi SaBo',
+    en: '🚀 Enter SaBo Application',
+  },
+  btn_skip_intro: {
+    id: 'Langsung Masuk',
+    en: 'Direct Skip',
+  },
+  cam_monumen_kujang: {
+    id: 'Monumen Kujang',
+    en: 'Kujang Monument',
+  },
+  cam_lawang_salapan: {
+    id: 'Lawang Salapan (9 Pintu)',
+    en: 'Lawang Salapan (9 Arches)',
+  },
+  cam_istana_bogor: {
+    id: 'Istana & Rusa Tutul',
+    en: 'Palace & Deer Herd',
+  },
+  cam_kebun_raya: {
+    id: 'Kebun Raya & Kenari Purba',
+    en: 'Botanical Canopy',
+  },
+  cam_ciliwung: {
+    id: 'Sungai Ciliwung & Jembatan',
+    en: 'Ciliwung River & Bridge',
+  },
+  cam_skyline_salak: {
+    id: 'Panorama Gunung Salak',
+    en: 'Mount Salak Skyline',
+  },
+  cam_free_orbit: {
+    id: 'Orbit 360° Bebas',
+    en: 'Free Orbit 360°',
+  },
+  time_day: {
+    id: 'Siang Tropis',
+    en: 'Tropical Day',
+  },
+  time_morning: {
+    id: 'Pagi Berkabut',
+    en: 'Misty Morning',
+  },
+  time_sunset: {
+    id: 'Senja Emas Baranangsiang',
+    en: 'Golden Sunset',
+  },
+  time_night: {
+    id: 'Malam Kota Pusaka',
+    en: 'Starlit Heritage Night',
+  },
+  weather_rain: {
+    id: 'Hujan Rintik Khas Bogor',
+    en: 'Signature Bogor Drizzle',
+  },
+  weather_mist: {
+    id: 'Kabut Lembah Salak',
+    en: 'Salak Mountain Mist',
+  },
+  audio_ambience: {
+    id: 'Suara Alam Bogor (Hujan & Burung)',
+    en: 'Bogor Nature Ambience',
+  },
+  btn_angkot_horn: {
+    id: 'Klakson Angkot Hijau',
+    en: 'Angkot Horn',
+  },
+  // Daily Heritage Challenges
+  daily_challenge_title: {
+    id: 'Tantangan Warisan Harian',
+    en: 'Daily Heritage Challenges',
+  },
+  daily_challenge_subtitle: {
+    id: 'Dapatkan misi harian untuk mengunjungi 1 lokasi cagar budaya acak dari database SaBo demi bonus XP melimpah!',
+    en: 'Get a daily mission to visit 1 random heritage location from our database every day for bonus XP!',
+  },
+  daily_today_mission: {
+    id: 'Misi Heritage Hari Ini',
+    en: "Today's Heritage Mission",
+  },
+  daily_streak_label: {
+    id: 'Streak Berturut-turut',
+    en: 'Consecutive Streak',
+  },
+  daily_time_left: {
+    id: 'Sisa Waktu Hari Ini',
+    en: 'Time Remaining Today',
+  },
+  daily_bonus_xp: {
+    id: 'Bonus XP Harian',
+    en: 'Daily Bonus XP',
+  },
+  daily_task_visit: {
+    id: 'Kunjungi & Check-In Lokasi',
+    en: 'Visit & Check-In Location',
+  },
+  daily_task_audio: {
+    id: 'Dengarkan Ulasan Narasi Audio',
+    en: 'Listen to Audio Narration',
+  },
+  daily_task_trivia: {
+    id: 'Selesaikan Kuis Trivia Heritage',
+    en: 'Complete Heritage Trivia Quiz',
+  },
+  daily_btn_checkin: {
+    id: 'Check-In Sekarang',
+    en: 'Check-In Now',
+  },
+  daily_btn_checked_in: {
+    id: 'Sudah Check-In',
+    en: 'Checked In',
+  },
+  daily_btn_claim: {
+    id: 'Klaim Bonus XP Harian!',
+    en: 'Claim Daily Bonus XP!',
+  },
+  daily_claimed: {
+    id: 'Tantangan Selesai & XP Telah Diklaim!',
+    en: 'Challenge Completed & XP Claimed!',
+  },
+  daily_reroll: {
+    id: 'Acak Lokasi Lain',
+    en: 'Roll Another Location',
+  },
+  daily_notif_banner_title: {
+    id: 'Tantangan Warisan Hari Ini Siap!',
+    en: "Today's Heritage Challenge is Ready!",
+  },
+  daily_notif_banner_desc: {
+    id: 'Kunjungi satu lokasi terpilih hari ini untuk meraih bonus XP dan mempertahankan streak-mu!',
+    en: 'Visit a selected location today to earn bonus XP and keep your daily streak alive!',
+  },
+  daily_btn_view_challenge: {
+    id: 'Lihat Tantangan',
+    en: 'View Challenge',
   },
   sim_gps_label: {
     id: 'Simulasi Lokasi GPS Pengguna',
