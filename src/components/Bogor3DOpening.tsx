@@ -18,6 +18,7 @@ import {
   X,
   HelpCircle,
   Radio,
+  Heart,
 } from 'lucide-react';
 import { useLanguage } from '../utils/translations';
 
@@ -26,7 +27,7 @@ interface Bogor3DOpeningProps {
   isInitialOpening?: boolean;
 }
 
-type CameraPreset = 'kujang' | 'salapan' | 'istana' | 'kebun' | 'ciliwung' | 'salak' | 'free';
+type CameraPreset = 'kujang' | 'salapan' | 'istana' | 'rusa' | 'kebun' | 'ciliwung' | 'salak' | 'free';
 type TimeOfDay = 'day' | 'morning' | 'sunset' | 'night';
 
 // Pre-allocated math objects to guarantee 60fps zero-GC animation loop
@@ -47,6 +48,7 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
   const [isAudioActive, setIsAudioActive] = useState<boolean>(false);
   const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
   const [showTouchHint, setShowTouchHint] = useState<boolean>(true);
+  const [feedToast, setFeedToast] = useState<{ message: string; id: number } | null>(null);
   const [landmarkInfo, setLandmarkInfo] = useState<{
     id: CameraPreset;
     title: string;
@@ -85,12 +87,28 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
     carGroups: [] as { group: THREE.Group; speed: number; angle: number; radius: number }[],
     deerGroups: [] as {
       group: THREE.Group;
+      body: THREE.Mesh;
       neck: THREE.Group;
-      head: THREE.Mesh;
+      head: THREE.Group;
+      leftEar: THREE.Group;
+      rightEar: THREE.Group;
+      tail: THREE.Group;
+      frontLegL: THREE.Group;
+      frontLegR: THREE.Group;
+      backLegL: THREE.Group;
+      backLegR: THREE.Group;
       baseRotX: number;
+      baseHeadY: number;
+      baseEarZ: number;
       isGrazing: boolean;
+      isBaby: boolean;
       speed: number;
+      wiggleOffset: number;
+      chewPhase: number;
+      happyTimer: number;
     }[],
+    carrots: [] as { group: THREE.Group; targetY: number; vy: number; rotSpeed: number; life: number }[],
+    heartParticles: [] as { mesh: THREE.Mesh; vy: number; life: number; maxLife: number }[],
     rainPoints: null as THREE.Points | null,
     riverMesh: null as THREE.Mesh | null,
     cloudGroups: [] as THREE.Group[],
@@ -159,6 +177,21 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
           lang === 'en'
             ? 'The first 6 axis deer were imported from the Coromandel coast of India in 1814.'
             : 'Enam rusa pertama didatangkan langsung dari perbatasan India pada tahun 1814.',
+      });
+    } else if (activePreset === 'rusa') {
+      setLandmarkInfo({
+        id: 'rusa',
+        title: lang === 'en' ? 'Adorable 3D Axis Deer' : 'Kawanan Rusa Tutul 3D Lucu',
+        subtitle: lang === 'en' ? 'Living Mascot of Bogor Palace' : 'Maskot Lucu & Menggemaskan Istana',
+        desc:
+          lang === 'en'
+            ? 'Spotted axis deer (Axis axis) grazing peacefully on the palace lawn. Features sparkling doe eyes with specular catchlights, perky twitching ears, wagging fluffy tails, and playful hopping baby fawns.'
+            : 'Rusa Tutul (Axis axis) anggun dan menggemaskan di halaman rumput Istana Bogor. Dilengkapi mata doe berbinar lucu, telinga bergerak lincah, ekor bergoyang riang, dan anak rusa yang melompat lincah di rerumputan.',
+        year: 'Sejak 1814',
+        funFact:
+          lang === 'en'
+            ? 'Tap "Feed Carrots 🥕" to drop fresh carrots and watch the fawns jump with joy!'
+            : 'Sentuh tombol "Beri Wortel 🥕" untuk memberi makan rusa dan melihat mereka melompat riang!',
       });
     } else if (activePreset === 'kebun') {
       setLandmarkInfo({
@@ -354,6 +387,139 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
     } catch (e) {
       console.warn('Horn audio failed', e);
     }
+  };
+
+  // Cute Sound Effect for Feeding the Deer ("Crunch-munch" + sweet joyful chime)
+  const playDeerChomp = () => {
+    try {
+      const AudioCtxClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = audioCtxRef.current || new AudioCtxClass();
+      if (!audioCtxRef.current) audioCtxRef.current = ctx;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+      // 3 subtle crispy munch bursts
+      [0, 0.12, 0.25].forEach((tStart, i) => {
+        const bufferSize = Math.floor(ctx.sampleRate * 0.06);
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let j = 0; j < bufferSize; j++) {
+          data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.3));
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1200 + i * 250, now + tStart);
+        filter.Q.setValueAtTime(2.5, now + tStart);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.09, now + tStart);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + tStart + 0.055);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(now + tStart);
+      });
+
+      // Cute bell chime of happiness
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now + 0.28);
+      osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.45);
+      g.gain.setValueAtTime(0.06, now + 0.28);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(now + 0.28);
+      osc.stop(now + 0.68);
+    } catch (e) {
+      console.warn('Deer sound failed', e);
+    }
+  };
+
+  // Interactive Feed Carrot to Deer
+  const handleFeedDeer = () => {
+    playDeerChomp();
+    const state = stateRef.current;
+    if (state.scene) {
+      // 1. Drop 3 3D carrots into the scene on the deer lawn
+      const carrotPositions = [
+        { x: -35.2, z: 27.2 },
+        { x: -33.8, z: 26.5 },
+        { x: -36.5, z: 26.0 },
+      ];
+      carrotPositions.forEach((pos, i) => {
+        const carrotGroup = new THREE.Group();
+        carrotGroup.position.set(pos.x, 6 + i * 1.2, pos.z);
+
+        const carrotRoot = new THREE.Mesh(
+          new THREE.ConeGeometry(0.12, 0.55, 8),
+          new THREE.MeshStandardMaterial({ color: 0xff6b1a, roughness: 0.35 })
+        );
+        carrotRoot.rotation.x = Math.PI;
+        carrotRoot.position.y = -0.25;
+        carrotRoot.castShadow = true;
+        carrotGroup.add(carrotRoot);
+
+        for (let l = 0; l < 3; l++) {
+          const leaf = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.22, 0.08),
+            new THREE.MeshStandardMaterial({ color: 0x38b000, roughness: 0.5 })
+          );
+          leaf.rotation.z = (l - 1) * 0.4;
+          leaf.position.set((l - 1) * 0.04, 0.1, 0);
+          carrotGroup.add(leaf);
+        }
+
+        state.scene!.add(carrotGroup);
+        state.carrots.push({
+          group: carrotGroup,
+          targetY: 0.2,
+          vy: -4 - Math.random() * 2,
+          rotSpeed: 3 + Math.random() * 2,
+          life: 9.0, // Lasts 9 seconds before clean removal
+        });
+      });
+
+      // 2. Spawn floating heart particles over deer
+      state.deerGroups.forEach((deer, idx) => {
+        deer.happyTimer = 6.0; // Boost animation excitement
+        const heartMat = new THREE.MeshStandardMaterial({
+          color: idx % 2 === 0 ? 0xff4d6d : 0xff758f,
+          emissive: 0xff4d6d,
+          emissiveIntensity: 0.4,
+          roughness: 0.3,
+        });
+        const heartMesh = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), heartMat);
+        heartMesh.scale.set(1.2, 1.2, 0.4);
+        heartMesh.position.set(
+          deer.group.position.x + (Math.random() - 0.5) * 0.4,
+          deer.group.position.y + 1.8 + Math.random() * 0.4,
+          deer.group.position.z + (Math.random() - 0.5) * 0.4
+        );
+        state.scene!.add(heartMesh);
+        state.heartParticles.push({
+          mesh: heartMesh,
+          vy: 0.8 + Math.random() * 0.5,
+          life: 0,
+          maxLife: 2.5,
+        });
+      });
+    }
+
+    setFeedToast({
+      message:
+        lang === 'en'
+          ? '🥕 The Axis Deer & Fawns are happily munching fresh carrots! (+20 XP Istana Bogor)'
+          : '🥕 Kawanan Rusa Tutul & Anak Rusa sangat gembira memakan wortel! (+20 XP Istana Bogor)',
+      id: Date.now(),
+    });
   };
 
   // Adjust rain gain node if rain state changes
@@ -1071,114 +1237,307 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
     scene.add(istanaGroup);
 
     // ==========================================
-    // 8. RUSA TUTUL ISTANA BOGOR (Axis Deer Herd with Baby Fawn)
+    // 8. RUSA TUTUL ISTANA BOGOR (Axis Deer Herd with Baby Fawns)
+    // Procedural Stylized 3D Deer with Expressive Doe Eyes & Rich Animated Kinematics
     // ==========================================
-    const deerBrownMat = new THREE.MeshStandardMaterial({
-      color: 0xb56c38,
-      roughness: 0.75,
-      metalness: 0.05,
+    const deerCoatMat = new THREE.MeshStandardMaterial({
+      color: 0xc2753a,
+      roughness: 0.62,
+      metalness: 0.04,
     });
-    const deerAntlerMat = new THREE.MeshStandardMaterial({ color: 0xd9cca9, roughness: 0.5 });
+    const deerUnderbellyMat = new THREE.MeshStandardMaterial({
+      color: 0xfffcf5,
+      roughness: 0.72,
+    });
+    const deerMuzzleMat = new THREE.MeshStandardMaterial({
+      color: 0xfff8ee,
+      roughness: 0.68,
+    });
+    const deerIrisMat = new THREE.MeshStandardMaterial({
+      color: 0x110c08,
+      roughness: 0.05,
+      metalness: 0.35,
+    });
+    const deerCatchlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const deerNoseMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1515,
+      roughness: 0.12,
+      metalness: 0.1,
+    });
+    const deerInnerEarMat = new THREE.MeshStandardMaterial({
+      color: 0xfcbdb5,
+      roughness: 0.75,
+    });
     const deerSpotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const deerHoofMat = new THREE.MeshStandardMaterial({
+      color: 0x2b241e,
+      roughness: 0.45,
+    });
+    const deerAntlerMat = new THREE.MeshStandardMaterial({
+      color: 0xded5be,
+      roughness: 0.52,
+      metalness: 0.08,
+    });
 
-    const createDeer = (
+    const createCuteDeer = (
       x: number,
       z: number,
       rotY: number,
       hasAntlers: boolean,
       isGrazing: boolean,
-      scale = 1.0
+      scale = 1.0,
+      isBaby = false,
+      wiggleOffset = 0
     ) => {
       const deer = new THREE.Group();
       deer.position.set(x, 0, z);
       deer.rotation.y = rotY;
       deer.scale.set(scale, scale, scale);
 
-      // Torso
-      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1.1, 4, 8), deerBrownMat);
+      // 1. Torso Body
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 0.94, 8, 16), deerCoatMat);
       body.rotation.x = Math.PI / 2;
-      body.position.y = 1.05;
+      body.position.y = 1.0;
       body.castShadow = true;
       deer.add(body);
 
-      // White spots along back (Axis deer spots)
-      for (let s = 0; s < 6; s++) {
-        const spot = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), deerSpotMat);
-        const zOff = -0.35 + (s % 3) * 0.35;
-        const side = s < 3 ? -0.28 : 0.28;
-        spot.position.set(side, 1.35, zOff);
-        deer.add(spot);
-      }
+      // Soft cream chest fur bib
+      const chestBib = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 10), deerUnderbellyMat);
+      chestBib.scale.set(0.85, 1.05, 0.95);
+      chestBib.position.set(0, 1.05, 0.38);
+      deer.add(chestBib);
 
-      // Neck & Head Group
+      // Soft cream underbelly plate
+      const underbelly = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), deerUnderbellyMat);
+      underbelly.scale.set(0.8, 0.55, 1.1);
+      underbelly.position.set(0, 0.75, -0.05);
+      deer.add(underbelly);
+
+      // Axis Deer White Spots along back & flanks
+      const spotOffsets = [
+        // Upper dorsal spine rows
+        [-0.17, 1.34, -0.38], [0.17, 1.34, -0.38],
+        [-0.18, 1.35, -0.20], [0.18, 1.35, -0.20],
+        [-0.19, 1.35, -0.02], [0.19, 1.35, -0.02],
+        [-0.18, 1.35,  0.16], [0.18, 1.35,  0.16],
+        [-0.16, 1.34,  0.32], [0.16, 1.34,  0.32],
+        // Lower flank rows
+        [-0.31, 1.15, -0.30], [0.31, 1.15, -0.30],
+        [-0.33, 1.12, -0.10], [0.33, 1.12, -0.10],
+        [-0.33, 1.12,  0.10], [0.33, 1.12,  0.10],
+        [-0.30, 1.15,  0.28], [0.30, 1.15,  0.28],
+      ];
+      spotOffsets.forEach(([sx, sy, sz]) => {
+        const spot = new THREE.Mesh(new THREE.SphereGeometry(0.042, 6, 6), deerSpotMat);
+        spot.position.set(sx, sy, sz);
+        deer.add(spot);
+      });
+
+      // Fluffy Wagging Tail
+      const tailGroup = new THREE.Group();
+      tailGroup.position.set(0, 1.16, -0.58);
+      const upperTail = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.28, 6, 8), deerCoatMat);
+      upperTail.rotation.x = -Math.PI / 4;
+      upperTail.position.set(0, -0.08, -0.1);
+      tailGroup.add(upperTail);
+
+      const underTail = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.24, 6, 8), deerUnderbellyMat);
+      underTail.rotation.x = -Math.PI / 4;
+      underTail.position.set(0, -0.12, -0.08);
+      tailGroup.add(underTail);
+      deer.add(tailGroup);
+
+      // 2. Neck & Head Hierarchy
       const neckGroup = new THREE.Group();
-      neckGroup.position.set(0, 1.2, 0.5);
-      const baseRotX = isGrazing ? 0.75 : -0.25;
+      neckGroup.position.set(0, 1.08, 0.42);
+      const baseRotX = isGrazing ? 0.72 : -0.22;
       neckGroup.rotation.x = baseRotX;
 
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, 0.8, 8), deerBrownMat);
-      neck.position.y = 0.35;
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 0.78, 12), deerCoatMat);
+      neck.position.y = 0.36;
       neckGroup.add(neck);
 
-      const head = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.55, 6), deerBrownMat);
-      head.rotation.x = -Math.PI / 3;
-      head.position.set(0, 0.75, 0.15);
-      neckGroup.add(head);
+      const throatStrip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.08), deerUnderbellyMat);
+      throatStrip.position.set(0, 0.35, 0.16);
+      neckGroup.add(throatStrip);
+
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.72, 0.18);
+      const baseHeadY = 0.72;
+
+      // Chubby cheeks cranium
+      const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.30, 16, 14), deerCoatMat);
+      cranium.scale.set(1.0, 0.92, 1.08);
+      headGroup.add(cranium);
+
+      // Soft cream muzzle
+      const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.20, 0.34, 14), deerMuzzleMat);
+      muzzle.rotation.x = Math.PI / 2;
+      muzzle.position.set(0, -0.08, 0.26);
+      headGroup.add(muzzle);
+
+      // Button nose
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), deerNoseMat);
+      nose.position.set(0, -0.05, 0.44);
+      headGroup.add(nose);
+
+      // Doe Eyes (Extra large, glossy obsidian with cute specular sparkles)
+      const eyeRadius = isBaby ? 0.092 : 0.082;
+      [-0.23, 0.23].forEach((ex) => {
+        const eyeIris = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius, 14, 14), deerIrisMat);
+        eyeIris.position.set(ex, 0.06, 0.16);
+        headGroup.add(eyeIris);
+
+        // Big specular glint
+        const catchlight1 = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), deerCatchlightMat);
+        catchlight1.position.set(ex + (ex > 0 ? 0.03 : -0.03), 0.10, 0.21);
+        headGroup.add(catchlight1);
+
+        // Secondary tiny sparkle
+        const catchlight2 = new THREE.Mesh(new THREE.SphereGeometry(0.018, 6, 6), deerCatchlightMat);
+        catchlight2.position.set(ex + (ex > 0 ? 0.01 : -0.01), 0.03, 0.13);
+        headGroup.add(catchlight2);
+      });
+
+      // Perky Expressive Ears with independent pivots
+      const leftEar = new THREE.Group();
+      leftEar.position.set(-0.20, 0.24, -0.06);
+      const leftEarOuter = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 10), deerCoatMat);
+      leftEarOuter.scale.set(1.0, 1.0, 0.5);
+      leftEarOuter.rotation.z = 0.45;
+      leftEarOuter.rotation.x = -0.15;
+      leftEarOuter.position.set(-0.10, 0.16, 0);
+      leftEar.add(leftEarOuter);
+
+      const leftEarInner = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.34, 10), deerInnerEarMat);
+      leftEarInner.scale.set(1.0, 1.0, 0.45);
+      leftEarInner.rotation.z = 0.45;
+      leftEarInner.rotation.x = -0.15;
+      leftEarInner.position.set(-0.09, 0.15, 0.02);
+      leftEar.add(leftEarInner);
+      headGroup.add(leftEar);
+
+      const rightEar = new THREE.Group();
+      rightEar.position.set(0.20, 0.24, -0.06);
+      const rightEarOuter = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 10), deerCoatMat);
+      rightEarOuter.scale.set(1.0, 1.0, 0.5);
+      rightEarOuter.rotation.z = -0.45;
+      rightEarOuter.rotation.x = -0.15;
+      rightEarOuter.position.set(0.10, 0.16, 0);
+      rightEar.add(rightEarOuter);
+
+      const rightEarInner = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.34, 10), deerInnerEarMat);
+      rightEarInner.scale.set(1.0, 1.0, 0.45);
+      rightEarInner.rotation.z = -0.45;
+      rightEarInner.rotation.x = -0.15;
+      rightEarInner.position.set(0.09, 0.15, 0.02);
+      rightEar.add(rightEarInner);
+      headGroup.add(rightEar);
 
       // Antlers if adult stag
       if (hasAntlers) {
-        const leftAntler = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.04, 0.06, 0.75, 6),
-          deerAntlerMat
-        );
-        leftAntler.rotation.z = 0.35;
-        leftAntler.position.set(-0.2, 1.05, 0);
-        neckGroup.add(leftAntler);
+        const leftAntlerBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.065, 0.88, 8), deerAntlerMat);
+        leftAntlerBeam.rotation.z = 0.38;
+        leftAntlerBeam.rotation.x = -0.25;
+        leftAntlerBeam.position.set(-0.18, 0.58, -0.08);
+        headGroup.add(leftAntlerBeam);
 
-        const rightAntler = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.04, 0.06, 0.75, 6),
-          deerAntlerMat
-        );
-        rightAntler.rotation.z = -0.35;
-        rightAntler.position.set(0.2, 1.05, 0);
-        neckGroup.add(rightAntler);
+        const leftBrowTine = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.04, 0.34, 6), deerAntlerMat);
+        leftBrowTine.rotation.x = 0.65;
+        leftBrowTine.position.set(-0.16, 0.45, 0.08);
+        headGroup.add(leftBrowTine);
+
+        const rightAntlerBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.065, 0.88, 8), deerAntlerMat);
+        rightAntlerBeam.rotation.z = -0.38;
+        rightAntlerBeam.rotation.x = -0.25;
+        rightAntlerBeam.position.set(0.18, 0.58, -0.08);
+        headGroup.add(rightAntlerBeam);
+
+        const rightBrowTine = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.04, 0.34, 6), deerAntlerMat);
+        rightBrowTine.rotation.x = 0.65;
+        rightBrowTine.position.set(0.16, 0.45, 0.08);
+        headGroup.add(rightBrowTine);
       }
 
+      if (isBaby) {
+        headGroup.scale.set(1.24, 1.24, 1.24); // Cute Chibi Proportion!
+      }
+
+      neckGroup.add(headGroup);
       deer.add(neckGroup);
 
-      // 4 Slender Legs
-      const legGeo = new THREE.CylinderGeometry(0.07, 0.06, 0.95, 6);
-      const legPositions = [
-        [-0.24, 0.48, -0.4],
-        [0.24, 0.48, -0.4],
-        [-0.24, 0.48, 0.35],
-        [0.24, 0.48, 0.35],
-      ];
-      legPositions.forEach(([lx, ly, lz]) => {
-        const leg = new THREE.Mesh(legGeo, deerBrownMat);
-        leg.position.set(lx, ly, lz);
-        leg.castShadow = true;
-        deer.add(leg);
-      });
+      // 3. Articulated Legs with Dark Hooves
+      const createLeg = (lx: number, ly: number, lz: number, isHind: boolean) => {
+        const legGroup = new THREE.Group();
+        legGroup.position.set(lx, ly, lz);
+
+        const upper = new THREE.Mesh(
+          new THREE.CylinderGeometry(isHind ? 0.085 : 0.075, 0.06, 0.45, 8),
+          deerCoatMat
+        );
+        upper.position.y = -0.22;
+        upper.castShadow = true;
+        legGroup.add(upper);
+
+        const lower = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.055, 0.048, 0.45, 8),
+          deerCoatMat
+        );
+        lower.position.y = -0.62;
+        lower.castShadow = true;
+        legGroup.add(lower);
+
+        const hoof = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.052, 0.065, 0.12, 8),
+          deerHoofMat
+        );
+        hoof.position.y = -0.88;
+        hoof.castShadow = true;
+        legGroup.add(hoof);
+
+        deer.add(legGroup);
+        return legGroup;
+      };
+
+      const frontLegL = createLeg(-0.21, 0.95, 0.32, false);
+      const frontLegR = createLeg( 0.21, 0.95, 0.32, false);
+      const backLegL  = createLeg(-0.21, 0.95, -0.38, true);
+      const backLegR  = createLeg( 0.21, 0.95, -0.38, true);
 
       return {
         group: deer,
+        body,
         neck: neckGroup,
-        head,
+        head: headGroup,
+        leftEar,
+        rightEar,
+        tail: tailGroup,
+        frontLegL,
+        frontLegR,
+        backLegL,
+        backLegR,
         baseRotX,
+        baseHeadY,
+        baseEarZ: 0.45,
         isGrazing,
-        speed: 1.0 + Math.random() * 0.8,
+        isBaby,
+        speed: 1.0 + Math.random() * 0.4,
+        wiggleOffset,
+        chewPhase: 0,
+        happyTimer: 0,
       };
     };
 
-    const d1 = createDeer(-38, 27, 0.4, true, false, 1.05); // Stag
-    const d2 = createDeer(-34, 29, -0.6, false, true, 0.95); // Hind grazing
-    const d3 = createDeer(-44, 30, 1.2, false, true, 1.0); // Hind grazing
-    const d4 = createDeer(-40, 32, -1.8, true, false, 1.1); // Stag proud
-    const d5 = createDeer(-33, 27.5, -0.4, false, false, 0.6); // Cute Baby Fawn!
+    const d1 = createCuteDeer(-38, 26, 0.4, true, false, 1.05, false, 0); // Majestic Stag
+    const d2 = createCuteDeer(-34.5, 28, -0.6, false, true, 0.95, false, 1.2); // Sweet Hind Grazing
+    const d3 = createCuteDeer(-42, 29, 1.1, false, true, 1.0, false, 2.4); // Hind Grazing
+    const d4 = createCuteDeer(-39.5, 31, -1.7, true, false, 1.1, false, 3.1); // Alert Stag
+    const d5 = createCuteDeer(-34, 26.2, -0.3, false, false, 0.58, true, 4.2); // Super Cute Baby Fawn!
+    const d6 = createCuteDeer(-32.2, 27.5, 0.8, false, false, 0.65, true, 5.0); // Playful Sibling Fawn!
+    const d7 = createCuteDeer(-36.2, 24.8, -0.2, false, true, 0.92, false, 6.1); // Gentle Mother Doe
 
-    [d1, d2, d3, d4, d5].forEach((d) => scene.add(d.group));
-    stateRef.current.deerGroups = [d1, d2, d3, d4, d5];
+    [d1, d2, d3, d4, d5, d6, d7].forEach((d) => scene.add(d.group));
+    stateRef.current.deerGroups = [d1, d2, d3, d4, d5, d6, d7];
 
     // ==========================================
     // 9. KEBUN RAYA BOGOR (Ancient Giant Kenari & Tropical Trees)
@@ -1504,6 +1863,27 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
       controls.touchPointers.delete(e.pointerId);
       if (controls.touchPointers.size === 0) {
         controls.isPointerDown = false;
+
+        // Detect tap / click to pet or feed deer
+        if (
+          Math.abs(e.clientX - controls.pointerStartX) < 8 &&
+          Math.abs(e.clientY - controls.pointerStartY) < 8
+        ) {
+          const rect = domEl.getBoundingClientRect();
+          const pointer = new THREE.Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+          );
+          const raycaster = new THREE.Raycaster();
+          raycaster.setFromCamera(pointer, camera);
+          const deerObjects: THREE.Object3D[] = [];
+          stateRef.current.deerGroups.forEach((d) => deerObjects.push(d.group));
+          const intersects = raycaster.intersectObjects(deerObjects, true);
+          if (intersects.length > 0) {
+            setActivePreset('rusa');
+            handleFeedDeer();
+          }
+        }
       } else if (controls.touchPointers.size === 1) {
         const pts = Array.from(controls.touchPointers.values()) as { x: number; y: number }[];
         const remaining = pts[0];
@@ -1595,16 +1975,107 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
         state.fireflyPoints.geometry.attributes.position.needsUpdate = true;
       }
 
-      // Animate Deer Grazing & Idle Head Movements
+      // Animate Cute Deer Herd ("Animasi Jelas Lucu")
       const timeSec = now * 0.001;
-      state.deerGroups.forEach((deer, idx) => {
-        deer.group.position.y = Math.sin(timeSec * 2.2 + idx) * 0.02;
+      state.deerGroups.forEach((deer) => {
+        // 1. Subtle breathing
+        const breath = Math.sin(timeSec * 2.4 + deer.wiggleOffset) * 0.015;
+        deer.body.scale.set(1 + breath, 1 + breath, 1);
+
+        // 2. Continuous cheerful tail wagging (faster wag when happy or baby)
+        const isHappy = deer.happyTimer > 0;
+        const tailSpeed = isHappy || deer.isBaby ? 14 : 7;
+        deer.tail.rotation.y =
+          Math.sin(timeSec * tailSpeed + deer.wiggleOffset) * (isHappy ? 0.65 : 0.36);
+        deer.tail.rotation.x = 0.22 + Math.sin(timeSec * 3.5 + deer.wiggleOffset) * 0.1;
+
+        // 3. Cute independent ear twitches (natural deer listening reflex)
+        const twitchNoiseL = Math.sin(timeSec * 28 + deer.wiggleOffset * 11);
+        const twitchLTrigger = Math.sin(timeSec * 0.8 + deer.wiggleOffset) > 0.65;
+        deer.leftEar.rotation.z = (deer.baseEarZ || 0.45) + (twitchLTrigger ? twitchNoiseL * 0.22 : 0);
+        deer.leftEar.rotation.x = -0.15 + (twitchLTrigger ? twitchNoiseL * 0.15 : 0);
+
+        const twitchNoiseR = Math.sin(timeSec * 26 + deer.wiggleOffset * 7);
+        const twitchRTrigger = Math.sin(timeSec * 0.7 + deer.wiggleOffset * 2) > 0.68;
+        deer.rightEar.rotation.z = -(deer.baseEarZ || 0.45) - (twitchRTrigger ? twitchNoiseR * 0.22 : 0);
+        deer.rightEar.rotation.x = -0.15 + (twitchRTrigger ? twitchNoiseR * 0.15 : 0);
+
+        // 4. Grazing vs Alert & Inquisitive head kinematics
         if (deer.isGrazing) {
-          deer.neck.rotation.x = deer.baseRotX + Math.sin(timeSec * 1.5 * deer.speed + idx) * 0.18;
+          // Nibbling grass: head dips and sweet chewing jaw rhythm
+          const grazeDip = Math.sin(timeSec * 1.5 * deer.speed + deer.wiggleOffset) * 0.12;
+          deer.neck.rotation.x = deer.baseRotX + grazeDip;
+          const chew = Math.sin(timeSec * 9.0 + deer.wiggleOffset) * 0.025;
+          deer.head.position.y = deer.baseHeadY + chew;
+          deer.head.rotation.z = Math.sin(timeSec * 3.5 + deer.wiggleOffset) * 0.04;
         } else {
-          deer.neck.rotation.y = Math.sin(timeSec * 1.0 * deer.speed + idx) * 0.15;
+          // Alert and curious: tilting head inquisitively & looking side-to-side
+          const tiltZ = Math.sin(timeSec * 1.3 * deer.speed + deer.wiggleOffset) * 0.14;
+          const lookY = Math.sin(timeSec * 0.75 * deer.speed + deer.wiggleOffset) * 0.28;
+          deer.neck.rotation.y = lookY;
+          deer.head.rotation.z = tiltZ;
+          deer.neck.rotation.x = deer.baseRotX + Math.sin(timeSec * 1.8 + deer.wiggleOffset) * 0.05;
+        }
+
+        // 5. Baby Fawn Playful Bouncing / Double Hopping
+        if (deer.isBaby) {
+          const hopPeriod = 3.6;
+          const cycleTime = (timeSec + deer.wiggleOffset) % hopPeriod;
+          if (cycleTime < 0.6) {
+            const hopPhase = (cycleTime / 0.6) * Math.PI * 2;
+            const hopHeight = Math.max(0, Math.sin(hopPhase)) * 0.32;
+            deer.group.position.y = hopHeight;
+            deer.frontLegL.rotation.x = -hopHeight * 1.8;
+            deer.frontLegR.rotation.x = -hopHeight * 1.8;
+            deer.tail.rotation.x = 0.55;
+          } else {
+            deer.group.position.y = Math.sin(timeSec * 2.2 + deer.wiggleOffset) * 0.02;
+            deer.frontLegL.rotation.x = THREE.MathUtils.damp(deer.frontLegL.rotation.x, 0, 8, delta);
+            deer.frontLegR.rotation.x = THREE.MathUtils.damp(deer.frontLegR.rotation.x, 0, 8, delta);
+          }
+        } else {
+          deer.group.position.y = Math.sin(timeSec * 2.0 + deer.wiggleOffset) * 0.015;
+        }
+
+        // 6. Happy timer decay
+        if (deer.happyTimer > 0) {
+          deer.happyTimer -= delta;
+          deer.neck.rotation.x += Math.sin(timeSec * 12) * 0.05;
         }
       });
+
+      // Animate Dropped Carrots
+      for (let c = state.carrots.length - 1; c >= 0; c--) {
+        const carrot = state.carrots[c];
+        carrot.life -= delta;
+        if (carrot.group.position.y > carrot.targetY) {
+          carrot.group.position.y += carrot.vy * delta;
+          carrot.group.rotation.y += carrot.rotSpeed * delta;
+          carrot.group.rotation.z += carrot.rotSpeed * 0.5 * delta;
+          if (carrot.group.position.y <= carrot.targetY) {
+            carrot.group.position.y = carrot.targetY;
+            carrot.group.rotation.x = Math.PI / 2; // Lies flat on the grass
+          }
+        }
+        if (carrot.life <= 0) {
+          state.scene?.remove(carrot.group);
+          state.carrots.splice(c, 1);
+        }
+      }
+
+      // Animate Floating Heart Particles
+      for (let h = state.heartParticles.length - 1; h >= 0; h--) {
+        const heart = state.heartParticles[h];
+        heart.life += delta;
+        heart.mesh.position.y += heart.vy * delta;
+        heart.mesh.position.x += Math.sin(heart.life * 4) * 0.01;
+        const scale = 1 - heart.life / heart.maxLife;
+        heart.mesh.scale.set(scale * 1.2, scale * 1.2, scale * 0.4);
+        if (heart.life >= heart.maxLife) {
+          state.scene?.remove(heart.mesh);
+          state.heartParticles.splice(h, 1);
+        }
+      }
 
       // Dynamic wet pavement gloss when raining
       if (state.roadMaterial && state.groundMaterial) {
@@ -1720,10 +2191,15 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
         controls.targetTheta = Math.PI * 0.98;
         controls.targetPhi = Math.PI * 0.42;
       } else if (state.activePreset === 'istana') {
-        controls.targetLookAt.set(-42, 5, 18);
-        controls.targetRadius = 32;
-        controls.targetTheta = -Math.PI * 0.2;
-        controls.targetPhi = Math.PI * 0.38;
+        controls.targetLookAt.set(-37.5, 2.8, 26);
+        controls.targetRadius = 22;
+        controls.targetTheta = -Math.PI * 0.22;
+        controls.targetPhi = Math.PI * 0.39;
+      } else if (state.activePreset === 'rusa') {
+        controls.targetLookAt.set(-34.8, 1.3, 27.2);
+        controls.targetRadius = 7.6;
+        controls.targetTheta = -Math.PI * 0.24;
+        controls.targetPhi = Math.PI * 0.44;
       } else if (state.activePreset === 'kebun') {
         controls.targetLookAt.set(24, 7, 5);
         controls.targetRadius = 38;
@@ -1943,6 +2419,22 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
         </div>
       )}
 
+      {/* 4b. Feed Toast Popup */}
+      {feedToast && (
+        <div className="fixed top-[max(4.2rem,calc(env(safe-area-inset-top)+3.5rem))] left-1/2 -translate-x-1/2 z-40 px-3 max-w-[95%]">
+          <div className="bg-[#143328]/95 text-amber-200 border border-amber-400/80 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold shadow-2xl backdrop-blur-md flex items-center gap-2 animate-pulse">
+            <span className="text-base sm:text-lg">🥕</span>
+            <span>{feedToast.message}</span>
+            <button
+              onClick={() => setFeedToast(null)}
+              className="p-1 hover:bg-white/10 rounded-lg text-stone-300 hover:text-white cursor-pointer ml-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 5. Thumb-Friendly Ergonomic Bottom Dock (100% Mobile Safe, Never Cut Off) */}
       <div className="fixed bottom-0 inset-x-0 z-30 pb-[max(0.5rem,env(safe-area-inset-bottom))] px-2 sm:px-4 pointer-events-none flex flex-col items-center">
         {/* Dock Collapse Toggle Handle (Always Visible & Safely Elevated) */}
@@ -1969,6 +2461,44 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
         {/* Main Control Panel (Predictable Height, Zero-Wrap, Zero-Cutoff) */}
         {!isDockCollapsed && (
           <div className="pointer-events-auto w-full max-w-3xl bg-[#071914]/95 border border-[#3F7D64]/60 rounded-2xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">
+            {/* Special Interactive Feeding Action Bar for Istana / Rusa */}
+            {(activePreset === 'istana' || activePreset === 'rusa') && (
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 mb-1.5 bg-gradient-to-r from-amber-950/85 via-[#0d2a20]/95 to-amber-950/85 rounded-xl border border-amber-500/50 shadow-inner">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-base animate-pulse flex-shrink-0">🦌</span>
+                  <div className="truncate">
+                    <span className="font-black text-xs text-amber-300">
+                      {lang === 'en' ? 'Palace Axis Deer Sanctuary' : 'Kawanan Rusa Tutul 3D'}
+                    </span>
+                    <span className="hidden sm:inline text-[10px] text-emerald-300 ml-1.5">
+                      {lang === 'en' ? '• Tap to feed carrots' : '• Sentuh layar untuk elus & beri makan'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setActivePreset(activePreset === 'rusa' ? 'istana' : 'rusa')}
+                    className="px-2 py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-[#143328] hover:bg-[#1e4839] text-stone-200 border border-[#3F7D64]/50 cursor-pointer active:scale-95 transition whitespace-nowrap"
+                  >
+                    {activePreset === 'rusa'
+                      ? lang === 'en'
+                        ? '🏛️ Palace Panorama'
+                        : '🏛️ Panorama Istana'
+                      : lang === 'en'
+                        ? '🔍 Zoom to Deer'
+                        : '🔍 Dekat Rusa'}
+                  </button>
+                  <button
+                    onClick={handleFeedDeer}
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-[10px] sm:text-xs font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-md border border-amber-300/80 cursor-pointer active:scale-95 transition whitespace-nowrap"
+                  >
+                    <span>🥕</span>
+                    <span>{t('btn_feed_deer')}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Shelf 1: Landmark Focus Selector (Horizontal Swipe Carousel) */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-nowrap pb-1.5 touch-pan-x">
               <span className="text-[10px] text-[#8FBC94] uppercase font-bold tracking-wider mr-1 hidden sm:inline whitespace-nowrap flex-shrink-0">
@@ -2007,8 +2537,20 @@ export const Bogor3DOpening: React.FC<Bogor3DOpeningProps> = ({
                     : 'bg-[#143328] text-stone-200 hover:bg-[#1a4033]'
                 }`}
               >
-                <span>🦌</span>
+                <span>🏛️</span>
                 <span>{t('cam_istana_bogor')}</span>
+              </button>
+
+              <button
+                onClick={() => setActivePreset('rusa')}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1 min-h-[34px] flex-shrink-0 active:scale-95 ${
+                  activePreset === 'rusa'
+                    ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-amber-300'
+                    : 'bg-[#143328] text-stone-200 hover:bg-[#1a4033]'
+                }`}
+              >
+                <span>🦌</span>
+                <span>{t('cam_rusa_istana')}</span>
               </button>
 
               <button

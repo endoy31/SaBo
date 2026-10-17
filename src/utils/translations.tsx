@@ -202,6 +202,14 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     id: 'Istana & Rusa Tutul',
     en: 'Palace & Deer Herd',
   },
+  cam_rusa_istana: {
+    id: 'Rusa Lucu 3D 🦌',
+    en: 'Cute 3D Deer 🦌',
+  },
+  btn_feed_deer: {
+    id: 'Beri Wortel Rusa 🥕',
+    en: 'Feed Carrots 🥕',
+  },
   cam_kebun_raya: {
     id: 'Kebun Raya & Kenari Purba',
     en: 'Botanical Canopy',
