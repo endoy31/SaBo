@@ -17,6 +17,10 @@ import {
   Trophy,
   Flame,
   Bell,
+  Camera,
+  Bot,
+  Gamepad2,
+  Bus,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { useLanguage } from '../utils/translations';
@@ -33,6 +37,9 @@ interface NavbarProps {
   theme?: 'dark' | 'light';
   setTheme?: (theme: 'dark' | 'light') => void;
   onOpen3DOpening?: () => void;
+  onOpenARScanner?: () => void;
+  weather?: import('../types').BogorWeatherData;
+  onOpenWeatherMood?: () => void;
   dailyChallengePending?: boolean;
   dailyStreak?: number;
 }
@@ -49,6 +56,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme = 'dark',
   setTheme,
   onOpen3DOpening,
+  onOpenARScanner,
+  weather,
+  onOpenWeatherMood,
   dailyChallengePending = false,
   dailyStreak = 0,
 }) => {
@@ -212,6 +222,31 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Sparkles className="w-3 h-3 text-[#F59E0B]" />
               <span>3D Bogor</span>
+            </button>
+          )}
+
+          {/* AR Scanner Camera Button */}
+          {onOpenARScanner && (
+            <button
+              onClick={onOpenARScanner}
+              className="flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition border border-emerald-400/60 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 cursor-pointer shadow-sm flex-shrink-0 animate-pulse"
+              title="Buka Kamera AR Pendeteksi Artefak Gaib"
+            >
+              <Camera className="w-3 h-3 text-emerald-400" />
+              <span>AR Lens</span>
+            </button>
+          )}
+
+          {/* Real-time Weather & Heritage Mood Widget */}
+          {weather && onOpenWeatherMood && (
+            <button
+              onClick={onOpenWeatherMood}
+              className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold transition border border-cyan-500/50 bg-cyan-950/50 text-cyan-200 hover:bg-cyan-900/60 cursor-pointer shadow-sm flex-shrink-0"
+              title="Lihat Cuaca Real-Time Bogor & Indeks Mood Kunjungan Cagar Budaya"
+            >
+              <span className="text-xs">{weather.icon}</span>
+              <span className="font-mono">{weather.temperature}°C</span>
+              <span className="hidden md:inline text-cyan-300/80">({weather.conditionLabel.split(' ')[0]})</span>
             </button>
           )}
         </div>
@@ -405,6 +440,70 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{t('btn_open_3d_bogor')}</span>
             </button>
           )}
+
+          {onOpenARScanner && (
+            <button
+              onClick={onOpenARScanner}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/40 bg-emerald-500/10 shadow-sm"
+              title="Pindai Artefak Virtual dengan Kamera AR"
+            >
+              <Camera className="w-4 h-4 text-emerald-400" />
+              <span>{t('nav_ar_scanner')}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-0.5" />
+            </button>
+          )}
+
+          {/* Tanya Ki Pemandu (Chatbot Guide) */}
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-emerald-700 to-teal-800 text-white border border-emerald-400 shadow-md ring-1 ring-emerald-400/40'
+                : 'text-[#8FBC94] hover:bg-[#1B4D3E]/40 hover:text-[#F7F1E3] border border-transparent'
+            }`}
+          >
+            <Bot className="w-4 h-4 text-emerald-300" />
+            <span>{t('nav_chat_guide')}</span>
+          </button>
+
+          {/* Mini-Game Budaya */}
+          <button
+            onClick={() => setActiveTab('games')}
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              activeTab === 'games'
+                ? 'bg-[#C17817]/25 text-[#F59E0B] border border-[#F59E0B] shadow-md ring-1 ring-[#F59E0B]/40'
+                : 'text-[#8FBC94] hover:bg-[#1B4D3E]/40 hover:text-[#F7F1E3] border border-transparent'
+            }`}
+          >
+            <Gamepad2 className="w-4 h-4 text-[#F59E0B]" />
+            <span>{t('nav_mini_games')}</span>
+          </button>
+
+          {/* Transportasi Biskita */}
+          <button
+            onClick={() => setActiveTab('transit')}
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              activeTab === 'transit'
+                ? 'bg-[#1B4D3E] text-[#F7F1E3] border border-[#8FBC94]/50 shadow-md'
+                : 'text-[#8FBC94] hover:bg-[#1B4D3E]/40 hover:text-[#F7F1E3] border border-transparent'
+            }`}
+          >
+            <Bus className="w-4 h-4 text-[#34D399]" />
+            <span>{t('nav_transit')}</span>
+          </button>
+
+          {/* Kamus Basa Sunda */}
+          <button
+            onClick={() => setActiveTab('dictionary')}
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition cursor-pointer ${
+              activeTab === 'dictionary'
+                ? 'bg-[#1B4D3E] text-[#F7F1E3] border border-[#8FBC94]/50 shadow-md'
+                : 'text-[#8FBC94] hover:bg-[#1B4D3E]/40 hover:text-[#F7F1E3] border border-transparent'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-amber-400" />
+            <span>{t('nav_dictionary')}</span>
+          </button>
 
           <button
             onClick={onOpenProfile}

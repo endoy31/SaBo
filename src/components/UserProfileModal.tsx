@@ -12,10 +12,14 @@ import {
   Check,
   Palette,
   Shield,
+  Camera,
+  Download,
+  FileCheck,
 } from 'lucide-react';
 import { UserProfile, AvatarOption } from '../types';
 import { useLanguage } from '../utils/translations';
 import { AVATAR_PRESETS } from '../data/avatars';
+import { VIRTUAL_ARTIFACTS } from '../data/arArtifactsData';
 
 interface UserProfileModalProps {
   user: UserProfile;
@@ -67,6 +71,117 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setFormData((prev) => ({ ...prev, avatar: preset.avatarUrl }));
     onUpdateProfile({ avatar: preset.avatarUrl });
     setIsChoosingAvatar(false);
+  };
+
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
+
+  const handleGenerateCertificate = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const w = 1200;
+      const h = 850;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Dark Royal Forest Background
+      const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, '#071A14');
+      bgGrad.addColorStop(0.5, '#0E3327');
+      bgGrad.addColorStop(1, '#05140F');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Ornate Outer Gold Border
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(30, 30, w - 60, h - 60);
+
+      // Inner Gold Border
+      ctx.strokeStyle = '#C17817';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(45, 45, w - 90, h - 90);
+
+      // Header Brand
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 24px serif';
+      ctx.fillStyle = '#8FBC94';
+      ctx.fillText('PEMERINTAH KOTA BOGOR • DINAS PARIWISATA & KEBUDAYAAN', w / 2, 110);
+
+      ctx.font = 'bold 44px serif';
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillText('SERTIFIKAT PENGHARGAAN', w / 2, 180);
+
+      ctx.font = 'italic 20px serif';
+      ctx.fillStyle = '#E5E7EB';
+      ctx.fillText('Diberikan dengan kehormatan atas dedikasi pelestarian warisan budaya kepada:', w / 2, 230);
+
+      // Recipient Name
+      ctx.font = 'bold 52px sans-serif';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(user.username.toUpperCase(), w / 2, 320);
+
+      // School / Institution
+      ctx.font = '22px sans-serif';
+      ctx.fillStyle = '#34D399';
+      ctx.fillText(user.schoolOrInst, w / 2, 370);
+
+      // Line separator
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+      ctx.beginPath();
+      ctx.moveTo(w / 2 - 250, 400);
+      ctx.lineTo(w / 2 + 250, 400);
+      ctx.stroke();
+
+      // Achievement Stats
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillText(`Gelar Penjelajah: LEVEL ${user.level} (${user.xp.toLocaleString()} XP)`, w / 2, 450);
+
+      ctx.font = '18px sans-serif';
+      ctx.fillStyle = '#D1D5DB';
+      ctx.fillText(
+        `Menyelesaikan ${user.completedQuests.length} Quest Cagar Budaya • Mengoleksi ${user.badges.length} Lencana Pajajaran • ${user.collectedArtifacts?.length || 0} Artefak AR`,
+        w / 2,
+        490
+      );
+
+      // Official Stamp Seal Graphic
+      const sealX = w / 2;
+      const sealY = 620;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, 55, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(193, 120, 23, 0.2)';
+      ctx.fill();
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillText('SABA BOGOR', sealX, sealY - 10);
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillText('OFFICIAL STAMP', sealX, sealY + 12);
+      ctx.fillText('★ 2026 ★', sealX, sealY + 28);
+
+      // Signatures
+      ctx.textAlign = 'left';
+      ctx.font = '16px sans-serif';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.fillText(`Diterbitkan pada: ${new Date().toLocaleDateString('id-ID')}`, 100, 750);
+      ctx.fillText('Kota Bogor, Jawa Barat', 100, 775);
+
+      ctx.textAlign = 'right';
+      ctx.fillText('Ki Pemandu Saba Bogor', w - 100, 750);
+      ctx.font = 'italic 14px sans-serif';
+      ctx.fillText('Kurator Warisan Budaya Kota Bogor', w - 100, 775);
+
+      const url = canvas.toDataURL('image/jpeg', 0.95);
+      setCertificateUrl(url);
+    } catch (e) {
+      console.warn('Certificate generation failed', e);
+    }
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -394,6 +509,60 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
+          {/* Collected Virtual AR Artifacts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase text-[#F59E0B] tracking-wider flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-[#34D399]" />
+                <span>
+                  {lang === 'en' ? 'Discovered AR Artifacts' : 'Artefak Digital AR Dikoleksi'} (
+                  {user.collectedArtifacts?.length || 0}/{VIRTUAL_ARTIFACTS.length})
+                </span>
+              </h4>
+              <span className="text-[10px] text-emerald-400 font-mono font-bold">
+                +{((user.collectedArtifacts?.length || 0) * 110).toLocaleString()} XP Total
+              </span>
+            </div>
+
+            {(!user.collectedArtifacts || user.collectedArtifacts.length === 0) ? (
+              <div className="p-3.5 rounded-2xl bg-[#0F2A21]/60 border border-white/10 text-center space-y-1">
+                <p className="text-xs text-[#8FBC94]">
+                  {lang === 'en'
+                    ? 'No digital artifacts scanned yet. Launch AR Lens to discover hidden relics!'
+                    : 'Belum ada artefak digital yang dikoleksi. Buka AR Lens untuk memindai relik tersembunyi!'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5">
+                {user.collectedArtifacts.map((artId) => {
+                  const art = VIRTUAL_ARTIFACTS.find((a) => a.id === artId);
+                  if (!art) return null;
+                  return (
+                    <div
+                      key={art.id}
+                      className="bg-[#173D30]/70 p-2.5 rounded-2xl border border-amber-400/40 flex items-center space-x-2.5 text-xs shadow-md"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-white flex items-center justify-center text-xl flex-shrink-0 border border-amber-400/50">
+                        {art.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[9px] uppercase font-bold text-amber-300 block truncate">
+                          {art.rarity}
+                        </span>
+                        <h5 className="font-bold text-[#F7F1E3] truncate text-[11px]">
+                          {lang === 'en' ? art.nameEn : art.name}
+                        </h5>
+                        <span className="text-[10px] text-[#8FBC94] block truncate">
+                          📍 {art.locationName}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Saved Itineraries */}
           {user.savedItineraries.length > 0 && (
             <div className="space-y-2">
@@ -420,7 +589,69 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Official Explorer Certificate Generator */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-[#173D30] to-emerald-950/40 border border-amber-500/40 text-center space-y-2.5">
+            <div className="flex items-center justify-center gap-2 text-amber-300 font-extrabold text-sm">
+              <FileCheck className="w-5 h-5 text-amber-400" />
+              <span>{lang === 'en' ? 'Official Explorer Certificate' : 'Sertifikat Resmi Penjelajah Bogor'}</span>
+            </div>
+            <p className="text-xs text-[#8FBC94] max-w-sm mx-auto leading-relaxed">
+              {lang === 'en'
+                ? 'Generate and download your personalized high-resolution Certificate of Heritage Exploration with official SaBo seal (Free & Zero Tokens)!'
+                : 'Cetak dan unduh Sertifikat Penghargaan Penjelajah Budaya resmi Kota Bogor beresolusi tinggi dengan stempel keemasan SaBo (Gratis & Bebas Token)!'}
+            </p>
+            <button
+              onClick={handleGenerateCertificate}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition cursor-pointer flex items-center justify-center gap-1.5 mx-auto"
+            >
+              <Download className="w-4 h-4" />
+              <span>{lang === 'en' ? 'Generate Certificate (JPG)' : 'Buat & Unduh Sertifikat'}</span>
+            </button>
+          </div>
         </div>
+
+        {/* Certificate Preview Popup Modal */}
+        {certificateUrl && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+            <div className="w-full max-w-2xl bg-[#0F2A21] border border-amber-400 rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 text-white text-center">
+              <div className="flex justify-between items-center">
+                <h4 className="font-extrabold text-sm text-amber-300 flex items-center gap-1.5">
+                  <FileCheck className="w-4 h-4 text-amber-400" />
+                  <span>Sertifikat Penjelajah Budaya Berhasil Dibuat</span>
+                </h4>
+                <button
+                  onClick={() => setCertificateUrl(null)}
+                  className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden border-2 border-amber-500/60 shadow-xl max-h-[70vh] overflow-y-auto">
+                <img src={certificateUrl} alt="Sertifikat Penjelajah" className="w-full h-auto object-contain" />
+              </div>
+
+              <div className="flex gap-2 justify-end pt-1">
+                <a
+                  href={certificateUrl}
+                  download={`Sertifikat_SabaBogor_${user.username.replace(/\s+/g, '_')}.jpg`}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Unduh Gambar Sertifikat</span>
+                </a>
+
+                <button
+                  onClick={() => setCertificateUrl(null)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

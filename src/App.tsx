@@ -14,6 +14,11 @@ import { Footer } from './components/Footer';
 import { Bogor3DOpening } from './components/Bogor3DOpening';
 import { ModuleDailyChallenges } from './components/ModuleDailyChallenges';
 import { DailyChallengeNotificationBanner } from './components/DailyChallengeNotificationBanner';
+import { ModuleARScanner } from './components/ModuleARScanner';
+import { ModuleChatbotGuide } from './components/ModuleChatbotGuide';
+import { ModuleMiniGames } from './components/ModuleMiniGames';
+import { ModuleTransitGuide } from './components/ModuleTransitGuide';
+import { ModuleSundaneseDictionary } from './components/ModuleSundaneseDictionary';
 
 import {
   UserProfile,
@@ -21,6 +26,7 @@ import {
   CommunityReview,
   Itinerary,
   DailyHeritageChallenge,
+  VirtualArtifact,
 } from './types';
 import { HERITAGE_LOCATIONS } from './data/bogorData';
 import { AVATAR_PRESETS } from './data/avatars';
@@ -42,6 +48,8 @@ function AppInner() {
   const [show3DOpening, setShow3DOpening] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('map');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+  const [isARScannerOpen, setIsARScannerOpen] = useState<boolean>(false);
+  const [arTargetLocationId, setArTargetLocationId] = useState<string | undefined>(undefined);
   const [selectedQuestLocation, setSelectedQuestLocation] =
     useState<HeritageLocation | null>(null);
   const [unlockedBadgeModal, setUnlockedBadgeModal] = useState<string | null>(null);
@@ -291,6 +299,65 @@ function AppInner() {
     }
   };
 
+  // Launch AR Camera Scanner
+  const handleOpenARScanner = (locationId?: string) => {
+    setArTargetLocationId(locationId);
+    setIsARScannerOpen(true);
+  };
+
+  // Collect Virtual AR Artifact
+  const handleCollectArtifact = (artifact: VirtualArtifact) => {
+    const currentCollected = user.collectedArtifacts || [];
+    const isFirstTime = !currentCollected.includes(artifact.id);
+    const updatedCollected = isFirstTime ? [...currentCollected, artifact.id] : currentCollected;
+
+    const earnedXp = isFirstTime ? artifact.xpReward : Math.round(artifact.xpReward / 2);
+    const newXp = user.xp + earnedXp;
+    const newLevel = Math.floor(newXp / 250) + 1;
+
+    let newBadges = [...user.badges];
+    let justUnlockedBadge: string | null = null;
+
+    if (artifact.badgeUnlock && !newBadges.includes(artifact.badgeUnlock)) {
+      newBadges.push(artifact.badgeUnlock);
+      justUnlockedBadge = artifact.badgeUnlock;
+    }
+
+    if (updatedCollected.length >= 3 && !newBadges.includes('Pakar AR Bogor')) {
+      newBadges.push('Pakar AR Bogor');
+      if (!justUnlockedBadge) justUnlockedBadge = 'Pakar AR Bogor';
+    }
+
+    setUser({
+      ...user,
+      xp: newXp,
+      level: newLevel,
+      collectedArtifacts: updatedCollected,
+      badges: newBadges,
+    });
+
+    if (justUnlockedBadge) {
+      setUnlockedBadgeModal(justUnlockedBadge);
+    }
+  };
+
+  // Award XP from Mini-Games
+  const handleAwardMiniGameXp = (amount: number, reason: string) => {
+    const newXp = user.xp + amount;
+    const newLevel = Math.floor(newXp / 250) + 1;
+    setUser({
+      ...user,
+      xp: newXp,
+      level: newLevel,
+    });
+  };
+
+  // Navigate & Fly-To from Chatbot / Knowledge Base to Map
+  const handleChatFlyToMap = (lat: number, lng: number, zoom?: number) => {
+    setUserPos({ lat, lng });
+    setActiveTab('map');
+  };
+
   // Simple Email Login Handler
   const handleSimpleEmailLogin = (email: string) => {
     const usernameFromEmail = email.split('@')[0];
@@ -373,6 +440,7 @@ function AppInner() {
           theme={theme}
           setTheme={setTheme}
           onOpen3DOpening={() => setShow3DOpening(true)}
+          onOpenARScanner={() => handleOpenARScanner()}
           dailyChallengePending={!dailyChallenge.completed}
           dailyStreak={dailyChallenge.streak}
         />
@@ -438,6 +506,7 @@ function AppInner() {
               setUserPos={setUserPos}
               isOffline={isOffline}
               isGpsActive={isGpsActive}
+              onLaunchARScanner={(locId) => handleOpenARScanner(locId)}
             />
           )}
 
@@ -467,6 +536,29 @@ function AppInner() {
               onAddReview={handleAddReview}
               onLikeReview={handleLikeReview}
             />
+          )}
+
+          {activeTab === 'chat' && (
+            <ModuleChatbotGuide
+              onNavigateToMapWithCoords={handleChatFlyToMap}
+            />
+          )}
+
+          {activeTab === 'games' && (
+            <ModuleMiniGames
+              user={user}
+              onAwardXp={handleAwardMiniGameXp}
+            />
+          )}
+
+          {activeTab === 'transit' && (
+            <ModuleTransitGuide
+              onNavigateToMap={() => setActiveTab('map')}
+            />
+          )}
+
+          {activeTab === 'dictionary' && (
+            <ModuleSundaneseDictionary />
           )}
         </main>
 
@@ -507,6 +599,22 @@ function AppInner() {
         <Bogor3DOpening
           onEnterApp={() => setShow3DOpening(false)}
           isInitialOpening={true}
+        />
+      )}
+
+      {/* AR Camera Scanner Experience */}
+      {(isARScannerOpen || activeTab === 'ar_scanner') && (
+        <ModuleARScanner
+          user={user}
+          userPos={userPos}
+          initialLocationId={arTargetLocationId}
+          onCollectArtifact={handleCollectArtifact}
+          onClose={() => {
+            setIsARScannerOpen(false);
+            if (activeTab === 'ar_scanner') {
+              setActiveTab('map');
+            }
+          }}
         />
       )}
     </div>

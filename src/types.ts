@@ -30,6 +30,8 @@ export interface HeritageLocation {
   xpReward: number;
   trivia: TriviaQuestion[];
   creatorAssetId?: string;
+  isIndoor?: boolean;
+  weatherSuitability?: 'all_weather' | 'outdoor_fair_weather' | 'indoor_sheltered';
 }
 
 export interface HistoricalFigure {
@@ -206,6 +208,7 @@ export interface UserProfile {
   favoriteCreators: string[];
   savedItineraries: Itinerary[];
   joinDate: string;
+  collectedArtifacts?: string[];
 }
 
 export interface AvatarOption {
@@ -254,5 +257,59 @@ export interface DailyHeritageChallenge {
   lastCompletedDate?: string;
   completedHistory: DailyChallengeHistoryItem[];
   notificationsEnabled?: boolean;
+}
+
+export interface VirtualArtifact {
+  id: string;
+  name: string;
+  nameEn: string;
+  category: 'relic' | 'nature' | 'culture' | 'culinary';
+  locationId: string;
+  locationName: string;
+  locationNameEn: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  description: string;
+  descriptionEn: string;
+  lore: string;
+  loreEn: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  xpReward: number;
+  icon: string;
+  badgeUnlock?: string;
+  modelType: 'kujang' | 'prasasti' | 'deer' | 'lotus' | 'crown' | 'coffee' | 'wayang' | 'rafflesia';
+}
+
+export interface BogorWeatherData {
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  weatherCode: number;
+  conditionLabel: string;
+  conditionLabelEn: string;
+  icon: string;
+  isDay: boolean;
+  rainMm: number;
+  precipitationProbability: number;
+  lastUpdated: string;
+  isLiveApi: boolean;
+  hourlyForecast: {
+    time: string;
+    temp: number;
+    pop: number;
+    code: number;
+  }[];
+  heritageMood: {
+    status: 'rain_sheltered' | 'cloudy_pleasant' | 'sunny_energetic' | 'mist_atmospheric' | 'storm_caution';
+    title: string;
+    titleEn: string;
+    advice: string;
+    adviceEn: string;
+    recommendedHeritageIds: string[];
+    cautionHeritageIds: string[];
+  };
 }
 

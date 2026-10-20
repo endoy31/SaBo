@@ -29,6 +29,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Plane,
+  Crosshair,
+  Camera,
+  CloudRain,
+  Thermometer,
 } from 'lucide-react';
 import { HERITAGE_LOCATIONS, CREATORS } from '../data/bogorData';
 import { BOGOR_UMKM_DATABASE } from '../data/umkmData';
@@ -281,6 +286,9 @@ interface ModuleMapProps {
   setUserPos: (pos: UserCoordinates) => void;
   isOffline: boolean;
   isGpsActive: boolean;
+  onLaunchARScanner?: (locationId?: string) => void;
+  weather?: import('../types').BogorWeatherData;
+  onOpenWeatherMood?: () => void;
 }
 
 export const ModuleMap: React.FC<ModuleMapProps> = ({
@@ -290,6 +298,9 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   setUserPos,
   isOffline,
   isGpsActive,
+  onLaunchARScanner,
+  weather,
+  onOpenWeatherMood,
 }) => {
   const { lang, t, getLocalizedHeritage } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -298,6 +309,9 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
   const routeGroupRef = useRef<L.LayerGroup | null>(null);
   const playerMarkerRef = useRef<L.Marker | null>(null);
+
+  // Weather Suitability Filter
+  const [filterWeatherSuitable, setFilterWeatherSuitable] = useState<boolean>(false);
 
   // Thematic Map States
   const [thematicLayer, setThematicLayer] = useState<ThematicLayerType>('history');
@@ -319,6 +333,84 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   const [isItemCardMinimized, setIsItemCardMinimized] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMobilePanelCollapsed, setIsMobilePanelCollapsed] = useState<boolean>(false);
+
+  // Smooth Fly-to Camera Flight State
+  const [isFlying, setIsFlying] = useState<boolean>(false);
+  const [flyingTarget, setFlyingTarget] = useState<{ name: string; zoom: number } | null>(null);
+  const flyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper to determine optimal zoom level tailored to each location's physical scale & setting
+  const getAppropriateZoomLevel = (item: MapDisplayItem): number => {
+    if (item.type === 'heritage') {
+      // Extensive grounds: Bogor Botanical Gardens (~87 ha) & Bogor Presidential Palace
+      if (item.data.id === 'kebun_raya_bogor' || item.data.id === 'istana_bogor') {
+        return 16.0;
+      }
+      // Historical monuments, museums, arches
+      return 16.8;
+    }
+    if (item.type === 'umkm') {
+      // Intimate street-level culinary spots, coffee shops, and bakeries
+      return 17.2;
+    }
+    if (item.type === 'creator') {
+      // Community ateliers & creative studios
+      return 17.0;
+    }
+    return 16.5;
+  };
+
+  // Dedicated Fly-to transition with smooth easing, configurable duration & visual feedback
+  const flyToLocation = (
+    lat: number,
+    lng: number,
+    options?: {
+      zoom?: number;
+      duration?: number;
+      name?: string;
+      easeLinearity?: number;
+    }
+  ) => {
+    if (!mapInstanceRef.current) return;
+
+    const targetZoom = options?.zoom ?? 16.5;
+    const duration = options?.duration ?? 1.4; // 1.4s smooth flight
+    const easeLinearity = options?.easeLinearity ?? 0.25;
+
+    if (options?.name) {
+      setFlyingTarget({ name: options.name, zoom: targetZoom });
+      setIsFlying(true);
+      if (flyTimeoutRef.current) clearTimeout(flyTimeoutRef.current);
+      flyTimeoutRef.current = setTimeout(() => {
+        setIsFlying(false);
+        setFlyingTarget(null);
+      }, (duration + 0.3) * 1000);
+    }
+
+    mapInstanceRef.current.flyTo([lat, lng], targetZoom, {
+      animate: true,
+      duration,
+      easeLinearity,
+    });
+  };
+
+  // High-level selection handler that coordinates spotlight card & camera fly-to
+  const handleSelectItem = (item: MapDisplayItem, triggerFlyTo: boolean = true) => {
+    setSelectedItem(item);
+    setIsItemCardMinimized(false);
+
+    if (triggerFlyTo && mapInstanceRef.current) {
+      const lat = item.data.coordinates.lat;
+      const lng = item.data.coordinates.lng;
+      const zoom = getAppropriateZoomLevel(item);
+      flyToLocation(lat, lng, {
+        zoom,
+        duration: 1.5,
+        name: item.data.name,
+        easeLinearity: 0.25,
+      });
+    }
+  };
 
   const handleCloseCard = () => {
     setSelectedItem(null);
@@ -476,6 +568,14 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
         subCategoryMatch = item.type === 'umkm' && item.data.rating >= 4.8;
       }
       if (!subCategoryMatch) return false;
+    }
+
+    // Weather suitability filter when activated
+    if (filterWeatherSuitable && weather) {
+      const isRain = weather.weatherCode >= 51 || weather.rainMm > 0;
+      if (isRain && item.type === 'heritage' && weather.heritageMood.cautionHeritageIds.includes(item.data.id)) {
+        return false;
+      }
     }
 
     // Text search query filter
@@ -661,9 +761,11 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
       );
 
       stopMarker.on('click', () => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.flyTo([wp.lat, wp.lng], 16);
-        }
+        flyToLocation(wp.lat, wp.lng, {
+          zoom: 16.8,
+          duration: 1.4,
+          name: lang === 'en' ? wp.nameEn : wp.name,
+        });
       });
 
       routeGroupRef.current?.addLayer(stopMarker);
@@ -748,13 +850,14 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
         iconEmoji = '🎨';
       }
 
-      // Special active badge highlight for thematic layer
+      // Marker highlight logic: selected state takes highest precedence, followed by thematic layer
+      const isSelected = selectedItem?.data.id === item.data.id;
       const isThematicActive =
         (thematicLayer === 'history' && (item.thematicCategory === 'history' || (item.type === 'heritage' && item.data.category === 'sejarah'))) ||
         (thematicLayer === 'culinary' && (item.thematicCategory === 'culinary' || (item.type === 'umkm' && item.data.generalCategory === 'kuliner'))) ||
         (thematicLayer === 'creative' && item.thematicCategory === 'creative');
 
-      const pinSize = isThematicActive ? 38 : 34;
+      const pinSize = isSelected ? 44 : isThematicActive ? 38 : 34;
 
       const customHtml = `
         <div style="
@@ -765,15 +868,26 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 2.5px solid #ffffff;
-          box-shadow: 0 4px 14px ${isThematicActive ? categoryColor + '88' : 'rgba(0,0,0,0.4)'};
-          font-size: ${isThematicActive ? '17px' : '15px'};
+          border: ${isSelected ? '3.5px solid #fbbf24' : '2.5px solid #ffffff'};
+          box-shadow: ${
+            isSelected
+              ? '0 0 0 5px rgba(251, 191, 36, 0.5), 0 0 25px rgba(251, 191, 36, 0.95), 0 8px 24px rgba(0,0,0,0.6)'
+              : isThematicActive
+              ? `0 4px 14px ${categoryColor}88`
+              : '0 4px 14px rgba(0,0,0,0.4)'
+          };
+          font-size: ${isSelected ? '20px' : isThematicActive ? '17px' : '15px'};
           cursor: pointer;
           position: relative;
-          transition: transform 0.2s ease;
-          ${isThematicActive ? 'transform: scale(1.08); ring: 2px solid #ffffff;' : ''}
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          ${isSelected ? 'transform: scale(1.15) translateY(-4px);' : isThematicActive ? 'transform: scale(1.08);' : ''}
         " title="${title}">
           ${iconEmoji}
+          ${
+            isSelected
+              ? '<span style="position: absolute; top: -10px; font-size: 11px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">🎯</span>'
+              : ''
+          }
           ${
             item.type === 'heritage' && completedQuestIds.includes(item.data.id)
               ? '<span style="position: absolute; top: -4px; right: -4px; background: #22c55e; color: white; border-radius: 50%; width: 15px; height: 15px; font-size: 9px; display: flex; align-items: center; justify-content: center; border: 1.5px solid white;">✓</span>'
@@ -796,19 +910,16 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
       const marker = L.marker([lat, lng], {
         icon: customIcon,
+        zIndexOffset: isSelected ? 1500 : isThematicActive ? 500 : 10,
       });
 
       marker.on('click', () => {
-        setSelectedItem(item);
-        setIsItemCardMinimized(false);
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.panTo([lat, lng]);
-        }
+        handleSelectItem(item, true);
       });
 
       markersGroupRef.current?.addLayer(marker);
     });
-  }, [filteredMapItems, completedQuestIds, thematicLayer]);
+  }, [filteredMapItems, completedQuestIds, thematicLayer, selectedItem]);
 
   // Update Player Position Marker
   useEffect(() => {
@@ -841,16 +952,20 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
   }, [userPos, isGpsActive]);
 
   const handleCenterUser = () => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([userPos.lat, userPos.lng], 16);
-    }
+    flyToLocation(userPos.lat, userPos.lng, {
+      zoom: 16.8,
+      duration: 1.4,
+      name: lang === 'en' ? 'My Location' : 'Lokasi Saya',
+    });
   };
 
-  const handleSimulateLocation = (lat: number, lng: number) => {
+  const handleSimulateLocation = (lat: number, lng: number, placeName?: string) => {
     setUserPos({ lat, lng });
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([lat, lng], 16);
-    }
+    flyToLocation(lat, lng, {
+      zoom: 16.8,
+      duration: 1.4,
+      name: placeName || (lang === 'en' ? 'Simulated Location' : 'Simulasi Lokasi'),
+    });
   };
 
   const handleFitThematicBounds = () => {
@@ -1084,16 +1199,47 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
             )}
           </div>
 
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-amber-300/60 light:text-amber-800/60" />
-            <input
-              type="text"
-              placeholder={t('search_map_placeholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#051710] light:bg-white/90 border border-amber-900/30 light:border-amber-800/20 rounded-xl pl-9 pr-3 py-2 text-xs text-amber-100 light:text-[#0d2e22] placeholder-amber-200/40 light:placeholder-amber-900/40 focus:outline-none focus:border-amber-500/60 transition"
-            />
+          {/* Search Box with Enter Fly-to */}
+          <div className="space-y-1">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-amber-300/60 light:text-amber-800/60" />
+              <input
+                type="text"
+                placeholder={t('search_map_placeholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && filteredMapItems.length > 0) {
+                    handleSelectItem(filteredMapItems[0], true);
+                  }
+                }}
+                className="w-full bg-[#051710] light:bg-white/90 border border-amber-900/30 light:border-amber-800/20 rounded-xl pl-9 pr-8 py-2 text-xs text-amber-100 light:text-[#0d2e22] placeholder-amber-200/40 light:placeholder-amber-900/40 focus:outline-none focus:border-amber-500/60 transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-amber-200/50 hover:text-white p-0.5 rounded cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {searchQuery.trim().length > 0 && filteredMapItems.length > 0 && (
+              <div className="flex items-center justify-between px-1 text-[10px] text-amber-300/80">
+                <span className="truncate">
+                  {filteredMapItems.length} {lang === 'en' ? 'found' : 'titik ditemukan'}
+                </span>
+                <button
+                  onClick={() => handleSelectItem(filteredMapItems[0], true)}
+                  className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold hover:underline cursor-pointer flex-shrink-0"
+                  title={t('btn_fly_to_tooltip')}
+                >
+                  <Plane className="w-3 h-3 text-amber-400" />
+                  <span>Fly-to #{1} ↵</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Sub-Category Filter Pills */}
@@ -1253,14 +1399,8 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
             return (
               <div
                 key={`${item.type}_${item.data.id}`}
-                onClick={() => {
-                  setSelectedItem(item);
-                  setIsItemCardMinimized(false);
-                  if (mapInstanceRef.current) {
-                    mapInstanceRef.current.flyTo([lat, lng], 16);
-                  }
-                }}
-                className={`p-3.5 transition cursor-pointer flex gap-3 ${
+                onClick={() => handleSelectItem(item, true)}
+                className={`p-3.5 transition cursor-pointer flex gap-3 group relative ${
                   isSelected
                     ? 'bg-amber-900/30 light:bg-amber-800/15 border-l-4 border-amber-500 backdrop-blur'
                     : 'hover:bg-amber-950/20 light:hover:bg-amber-900/5'
@@ -1277,10 +1417,23 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                     <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-300 light:text-amber-900 bg-amber-900/30 light:bg-amber-800/10 px-2 py-0.5 rounded-md border border-amber-700/30">
                       {tag}
                     </span>
-                    {ratingBadge}
+                    <div className="flex items-center gap-1">
+                      {ratingBadge}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectItem(item, true);
+                        }}
+                        className="p-1 rounded-md bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 hover:text-white border border-amber-500/30 transition flex-shrink-0 active:scale-95"
+                        title={t('btn_fly_to_tooltip')}
+                        aria-label="Fly-to location"
+                      >
+                        <Plane className="w-3 h-3 text-amber-400" />
+                      </button>
+                    </div>
                   </div>
 
-                  <h3 className="font-bold text-xs text-amber-100 light:text-[#0d2e22] truncate">
+                  <h3 className="font-bold text-xs text-amber-100 light:text-[#0d2e22] truncate group-hover:text-amber-300 transition">
                     {name}
                   </h3>
                   <p className="text-[11px] text-amber-200/60 light:text-amber-900/70 truncate mt-0.5">
@@ -1299,20 +1452,20 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             <button
-              onClick={() => handleSimulateLocation(-6.6013, 106.8055)}
-              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition"
+              onClick={() => handleSimulateLocation(-6.6013, 106.8055, 'Tugu Kujang')}
+              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition cursor-pointer"
             >
               📍 Tugu Kujang
             </button>
             <button
-              onClick={() => handleSimulateLocation(-6.6045, 106.8012)}
-              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition"
+              onClick={() => handleSimulateLocation(-6.6045, 106.8012, 'Suryakencana')}
+              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition cursor-pointer"
             >
               🍲 Suryakencana
             </button>
             <button
-              onClick={() => handleSimulateLocation(-6.6074, 106.8115)}
-              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition"
+              onClick={() => handleSimulateLocation(-6.6074, 106.8115, 'Baranangsiang')}
+              className="px-2 py-1.5 bg-amber-950/40 light:bg-white/60 hover:bg-amber-900/40 text-amber-100 light:text-[#0d2e22] rounded-lg text-[10px] truncate border border-amber-800/30 transition cursor-pointer"
             >
               ☕ Baranangsiang
             </button>
@@ -1323,6 +1476,21 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
       {/* Main Map View Area */}
       <div className="flex-1 relative h-full">
         <div ref={mapContainerRef} className="w-full h-full z-10" />
+
+        {/* Dynamic Fly-to HUD Flight Indicator */}
+        {isFlying && flyingTarget && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none transition-all duration-300">
+            <div className="bg-[#071c14]/95 border border-amber-400/80 text-amber-200 px-4 py-2 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-2.5 text-xs font-extrabold ring-2 ring-amber-500/30 animate-pulse">
+              <Plane className="w-4 h-4 text-amber-400" />
+              <span>
+                {t('flying_to_location')} <span className="text-white underline decoration-amber-400">{flyingTarget.name}</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-300 text-[10px] border border-amber-600/40">
+                Zoom {flyingTarget.zoom.toFixed(1)}x
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* TOP FLOATING THEMATIC CONTROLS BAR (OVER MAP) */}
         <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
@@ -1349,6 +1517,30 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                 {lang === 'en' ? 'Fit View' : 'Fokus Area'}
               </span>
             </button>
+
+            {onLaunchARScanner && (
+              <button
+                onClick={() => onLaunchARScanner(selectedItem ? selectedItem.data.id : undefined)}
+                className="px-3 py-2 bg-gradient-to-r from-emerald-800/90 via-teal-800/90 to-amber-700/90 hover:from-emerald-700 hover:to-amber-600 text-amber-200 hover:text-white rounded-2xl shadow-xl border border-amber-400/60 flex items-center space-x-1.5 text-xs font-bold backdrop-blur-xl transition active:scale-95 cursor-pointer ring-1 ring-amber-400/30"
+                title={t('btn_ar_scanner_tooltip')}
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                <span className="hidden sm:inline">{t('btn_ar_scanner')}</span>
+                <span className="sm:hidden font-mono">AR Lens</span>
+              </button>
+            )}
+
+            {weather && onOpenWeatherMood && (
+              <button
+                onClick={onOpenWeatherMood}
+                className="px-3 py-2 bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-200 rounded-2xl shadow-xl border border-cyan-500/50 flex items-center space-x-1.5 text-xs font-bold backdrop-blur-xl transition active:scale-95 cursor-pointer ring-1 ring-cyan-500/30"
+                title="Lihat Mood Cuaca & Ketersediaan Kunjungan Heritage"
+              >
+                <span>{weather.icon}</span>
+                <span className="font-mono">{weather.temperature}°C</span>
+                <span className="hidden lg:inline text-cyan-300">Mood Cuaca</span>
+              </button>
+            )}
           </div>
 
           {/* Right Actions: Thematic Route Switch & Basemap Tile Selector */}
@@ -1533,6 +1725,15 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
 
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <button
+                  onClick={() => handleSelectItem(selectedItem, true)}
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white border border-amber-500/40 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-sm active:scale-95"
+                  title={t('btn_fly_to_tooltip')}
+                  aria-label="Fly to location"
+                >
+                  <Plane className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[10px] hidden xs:inline">{t('btn_fly_to')}</span>
+                </button>
+                <button
                   onClick={() => setIsItemCardMinimized(false)}
                   className="px-2.5 py-1.5 rounded-xl bg-amber-800/40 hover:bg-amber-700/50 light:bg-amber-800/20 text-amber-200 hover:text-white light:text-amber-900 border border-amber-600/40 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer shadow-sm active:scale-95"
                   title={lang === 'en' ? 'Expand details' : 'Perbesar detail'}
@@ -1612,19 +1813,62 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                       <p className="text-[11px] text-amber-200/70 light:text-[#3b2818] line-clamp-2 mt-1 leading-relaxed">
                         {selectedItem.data.overview}
                       </p>
+
+                      {weather && (
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          {weather.heritageMood.recommendedHeritageIds.includes(selectedItem.data.id) ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shadow-sm">
+                              <span>{weather.icon}</span>
+                              <span>Rekomendasi Utama Cuaca Ini</span>
+                            </span>
+                          ) : weather.heritageMood.cautionHeritageIds.includes(selectedItem.data.id) ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm">
+                              <span>{weather.icon}</span>
+                              <span>Kondisi Basah • Bawa Payung</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-[#8FBC94] border border-white/10 flex items-center gap-1">
+                              <span>{weather.icon}</span>
+                              <span>Kunjungan Nyaman ({weather.temperature}°C)</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                    <a
-                      href={selectedItem.data.googleMapsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
-                    >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span>{t('btn_route_gmaps')}</span>
-                    </a>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => handleSelectItem(selectedItem, true)}
+                        className="inline-flex items-center space-x-1.5 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white font-bold px-3 py-1.5 rounded-xl border border-amber-500/40 transition active:scale-95 cursor-pointer"
+                        title={t('btn_fly_to_tooltip')}
+                      >
+                        <Plane className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('btn_fly_to')}</span>
+                      </button>
+
+                      <a
+                        href={selectedItem.data.googleMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>{t('btn_route_gmaps')}</span>
+                      </a>
+
+                      {onLaunchARScanner && (
+                        <button
+                          onClick={() => onLaunchARScanner(selectedItem.data.id)}
+                          className="inline-flex items-center space-x-1.5 text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 hover:text-white font-bold px-3 py-1.5 rounded-xl border border-emerald-500/40 transition active:scale-95 cursor-pointer"
+                          title={t('btn_ar_scanner_tooltip')}
+                        >
+                          <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>{t('btn_ar_scanner')}</span>
+                        </button>
+                      )}
+                    </div>
 
                     <button
                       onClick={() => onSelectQuestLocation(selectedItem.data)}
@@ -1674,15 +1918,37 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                   </div>
 
                   <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                    <a
-                      href={selectedItem.data.googleMapsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
-                    >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span>{t('route_google_maps')}</span>
-                    </a>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => handleSelectItem(selectedItem, true)}
+                        className="inline-flex items-center space-x-1.5 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white font-bold px-3 py-1.5 rounded-xl border border-amber-500/40 transition active:scale-95 cursor-pointer"
+                        title={t('btn_fly_to_tooltip')}
+                      >
+                        <Plane className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('btn_fly_to')}</span>
+                      </button>
+
+                      <a
+                        href={selectedItem.data.googleMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center space-x-1.5 text-xs text-emerald-200 light:text-emerald-900 hover:text-emerald-100 font-semibold bg-emerald-800/30 light:bg-emerald-800/15 hover:bg-emerald-800/40 px-3 py-1.5 rounded-xl border border-emerald-600/40 transition backdrop-blur-md"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>{t('route_google_maps')}</span>
+                      </a>
+
+                      {onLaunchARScanner && (
+                        <button
+                          onClick={() => onLaunchARScanner(selectedItem.data.id)}
+                          className="inline-flex items-center space-x-1.5 text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 hover:text-white font-bold px-3 py-1.5 rounded-xl border border-emerald-500/40 transition active:scale-95 cursor-pointer"
+                          title={t('btn_ar_scanner_tooltip')}
+                        >
+                          <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>{t('btn_ar_scanner')}</span>
+                        </button>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-1.5">
                       {selectedItem.data.whatsapp && (
@@ -1752,10 +2018,21 @@ export const ModuleMap: React.FC<ModuleMapProps> = ({
                   </div>
 
                   <div className="mt-3.5 pt-3 border-t border-amber-900/20 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs text-amber-200/70 light:text-[#3b2818] flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-sky-400" />
-                      {selectedItem.data.address}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleSelectItem(selectedItem, true)}
+                        className="inline-flex items-center space-x-1.5 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white font-bold px-3 py-1.5 rounded-xl border border-amber-500/40 transition active:scale-95 cursor-pointer"
+                        title={t('btn_fly_to_tooltip')}
+                      >
+                        <Plane className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('btn_fly_to')}</span>
+                      </button>
+
+                      <span className="text-xs text-amber-200/70 light:text-[#3b2818] flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-sky-400" />
+                        {selectedItem.data.address}
+                      </span>
+                    </div>
 
                     <div className="flex items-center gap-1.5">
                       {selectedItem.data.links.whatsapp && (

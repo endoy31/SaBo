@@ -64,6 +64,22 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     id: 'Ulasan Komunitas',
     en: 'Community Reviews',
   },
+  nav_chat_guide: {
+    id: 'Tanya Ki Pemandu 💬',
+    en: 'Ask SaBo Guide 💬',
+  },
+  nav_mini_games: {
+    id: 'Mini-Game Budaya 🎮',
+    en: 'Mini-Games 🎮',
+  },
+  nav_transit: {
+    id: 'Transportasi Biskita 🚌',
+    en: 'Transit & Biskita 🚌',
+  },
+  nav_dictionary: {
+    id: 'Kamus Basa Sunda 📖',
+    en: 'Sundanese Phrases 📖',
+  },
   nav_profile: {
     id: 'Profil Saya',
     en: 'My Profile',
@@ -209,6 +225,38 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
   btn_feed_deer: {
     id: 'Beri Wortel Rusa 🥕',
     en: 'Feed Carrots 🥕',
+  },
+  btn_fly_to: {
+    id: 'Fokus Peta ✈️',
+    en: 'Fly To ✈️',
+  },
+  btn_fly_to_tooltip: {
+    id: 'Animasi kamera meluncur mulus ke lokasi ini',
+    en: 'Smoothly glide map camera to this location',
+  },
+  flying_to_location: {
+    id: 'Meluncur ke',
+    en: 'Flying to',
+  },
+  btn_ar_scanner: {
+    id: 'Pindai AR 📷',
+    en: 'AR Scan 📷',
+  },
+  btn_ar_scanner_tooltip: {
+    id: 'Luncurkan kamera AR untuk memindai artefak digital di lokasi ini',
+    en: 'Launch AR camera to scan for digital artifacts at this location',
+  },
+  nav_ar_scanner: {
+    id: 'AR Lens & Artefak',
+    en: 'AR Lens & Artifacts',
+  },
+  ar_scanner_banner_title: {
+    id: 'Kamera AR Pendeteksi Artefak Gaib',
+    en: 'AR Camera Digital Artifact Detector',
+  },
+  ar_scanner_banner_desc: {
+    id: 'Pindai sekelilingmu dengan kamera untuk menemukan peninggalan bersejarah tersembunyi!',
+    en: 'Scan your surroundings with camera to discover hidden historical relics!',
   },
   cam_kebun_raya: {
     id: 'Kebun Raya & Kenari Purba',
